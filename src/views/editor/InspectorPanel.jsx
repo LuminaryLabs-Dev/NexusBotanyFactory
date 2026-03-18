@@ -103,12 +103,30 @@ export default function InspectorPanel({
             <Slider label="Curvature" value={params.levels[0]?.curve ?? 0.5} min={0} max={2} onChange={(value) => updateLevel(0, 'curve', value)} />
             <Slider label="Split Blending" value={params.levels[0]?.splitSmoothness ?? 1} min={0} max={1} step={0.05} onChange={(value) => updateLevel(0, 'splitSmoothness', value)} />
           </SectionCard>
-          <SectionCard id="leader-rules" title="Leader Rules" helper="Control where leaders emerge and how much they inherit trunk behavior." emphasis={true} activeCategories={activeCategories} toggleCategory={toggleCategory}>
+          <SectionCard id="leader-rules" title="Leader Rules" helper="Control where leaders emerge and how strongly they compete as major structural axes." emphasis={true} activeCategories={activeCategories} toggleCategory={toggleCategory}>
             <Slider label="Leader Start Min" value={params.leaderStartMin} min={0} max={1} step={0.05} onChange={(value) => updateParam('leaderStartMin', value)} />
             <Slider label="Leader Start Max" value={params.leaderStartMax} min={0} max={1} step={0.05} onChange={(value) => updateParam('leaderStartMax', value)} />
             <Slider label="Leader Thickness Retention" value={params.leaderThicknessRetention} min={0.1} max={1.5} step={0.05} onChange={(value) => updateParam('leaderThicknessRetention', value)} />
             <Slider label="Leader Length Bias" value={params.leaderLengthBias} min={0.2} max={2} step={0.05} onChange={(value) => updateParam('leaderLengthBias', value)} />
             <Slider label="Leader Inheritance" value={params.leaderInheritance} min={0} max={1} step={0.05} onChange={(value) => updateParam('leaderInheritance', value)} />
+            <Slider label="Leader Awareness Radius" value={params.leaderAwarenessRadius} min={0} max={30} step={0.1} onChange={(value) => updateParam('leaderAwarenessRadius', value)} />
+            <Slider label="Projection Length" value={params.leaderProjectionLength} min={0.1} max={3} step={0.05} onChange={(value) => updateParam('leaderProjectionLength', value)} />
+            <Slider label="Corridor Width" value={params.leaderCorridorWidth} min={0.1} max={5} step={0.05} onChange={(value) => updateParam('leaderCorridorWidth', value)} />
+            <Slider label="Leader Repulsion" value={params.leaderRepulsionStrength} min={0} max={3} step={0.05} onChange={(value) => updateParam('leaderRepulsionStrength', value)} />
+            <Slider label="Parallel Conflict" value={params.leaderParallelPenalty} min={0} max={2} step={0.05} onChange={(value) => updateParam('leaderParallelPenalty', value)} />
+            <Slider label="Redundancy Penalty" value={params.leaderRedundancyPenalty} min={0} max={2} step={0.05} onChange={(value) => updateParam('leaderRedundancyPenalty', value)} />
+            <Slider label="Yield Threshold" value={params.leaderYieldThreshold} min={0} max={1} step={0.05} onChange={(value) => updateParam('leaderYieldThreshold', value)} />
+            <Slider label="Primary Protection" value={params.primaryLeaderProtection} min={0} max={1} step={0.05} onChange={(value) => updateParam('primaryLeaderProtection', value)} />
+            <Slider label="Split Grace Distance" value={params.leaderGraceDistance} min={0} max={20} step={0.1} onChange={(value) => updateParam('leaderGraceDistance', value)} />
+            <Slider label="Crown Separation" value={params.crownZoneSeparationStrength} min={0} max={2} step={0.05} onChange={(value) => updateParam('crownZoneSeparationStrength', value)} />
+          </SectionCard>
+          <SectionCard id="competition" title="Branch Awareness" helper="Make ordinary branches sense nearby occupancy, steer out of crowding, and lose vigor in congested zones." activeCategories={activeCategories} toggleCategory={toggleCategory}>
+            <Slider label="Awareness Radius" value={params.branchAwarenessRadius} min={0} max={20} step={0.1} onChange={(value) => updateParam('branchAwarenessRadius', value)} />
+            <Slider label="Exclusion Radius" value={params.branchExclusionRadius} min={0} max={6} step={0.05} onChange={(value) => updateParam('branchExclusionRadius', value)} />
+            <Slider label="Repulsion Strength" value={params.branchRepulsionStrength} min={0} max={3} step={0.05} onChange={(value) => updateParam('branchRepulsionStrength', value)} />
+            <Slider label="Crowding Penalty" value={params.branchCrowdingPenalty} min={0} max={1} step={0.05} onChange={(value) => updateParam('branchCrowdingPenalty', value)} />
+            <Slider label="Crowded Tip Death" value={params.branchCrowdedDeathChance} min={0} max={1} step={0.05} onChange={(value) => updateParam('branchCrowdedDeathChance', value)} />
+            <Slider label="Outward Escape Bias" value={params.branchOutwardBias} min={0} max={2} step={0.05} onChange={(value) => updateParam('branchOutwardBias', value)} />
           </SectionCard>
           <div className="space-y-3">
             <div className="px-1 text-[10px] font-black uppercase tracking-[0.26em] text-[color:var(--text-muted)]">Branch Layers</div>

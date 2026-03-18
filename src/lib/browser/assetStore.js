@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'nexus-botany-factory.assets.v2'
+const STORAGE_KEY = 'nexus-botany-factory.assets.v3'
 
 let memoryAssets = []
 
