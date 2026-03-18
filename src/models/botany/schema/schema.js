@@ -13,6 +13,9 @@ export const BOTANY_PARAM_FIELD_SCHEMA = {
   radius: { type: 'number', min: 0.05, max: 10 },
   taper: { type: 'number', min: 0, max: 1 },
   recursion: { type: 'integer', min: 0, max: 5 },
+  trunkUprightStrength: { type: 'number', min: 0, max: 1 },
+  trunkNoiseDamping: { type: 'number', min: 0, max: 1 },
+  trunkLeanLimit: { type: 'number', min: 0.02, max: 0.75 },
   leaderCount: { type: 'integer', min: 0, max: 6 },
   leaderStartMin: { type: 'number', min: 0, max: 1 },
   leaderStartMax: { type: 'number', min: 0, max: 1 },
@@ -95,7 +98,7 @@ const makePresetSummary = ([name, params]) => ({
 export const createDefaultParams = (presetName = DEFAULT_PRESET_NAME) => clonePresetParams(presetName)
 
 export const createSchemaDocument = () => ({
-  version: 2,
+  version: 3,
   defaultPresetName: DEFAULT_PRESET_NAME,
   supportedAssetKinds: SUPPORTED_ASSET_KINDS,
   presets: Object.entries(SPECIES_PRESETS).map(makePresetSummary),

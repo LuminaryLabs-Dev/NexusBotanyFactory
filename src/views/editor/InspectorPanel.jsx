@@ -101,6 +101,9 @@ export default function InspectorPanel({
           <SectionCard id="trunk-rules" title="True Trunk" helper="Fine tune trunk segmentation, curvature, and how the base axis behaves." emphasis={true} activeCategories={activeCategories} toggleCategory={toggleCategory}>
             <Slider label="Resolution" value={params.levels[0]?.segments ?? 8} min={3} max={32} step={1} onChange={(value) => updateLevel(0, 'segments', value)} />
             <Slider label="Curvature" value={params.levels[0]?.curve ?? 0.5} min={0} max={2} onChange={(value) => updateLevel(0, 'curve', value)} />
+            <Slider label="Upright Bias" value={params.trunkUprightStrength} min={0} max={1} step={0.05} onChange={(value) => updateParam('trunkUprightStrength', value)} />
+            <Slider label="Noise Damping" value={params.trunkNoiseDamping} min={0} max={1} step={0.05} onChange={(value) => updateParam('trunkNoiseDamping', value)} />
+            <Slider label="Lean Limit" value={params.trunkLeanLimit} min={0.02} max={0.5} step={0.01} onChange={(value) => updateParam('trunkLeanLimit', value)} />
             <Slider label="Split Blending" value={params.levels[0]?.splitSmoothness ?? 1} min={0} max={1} step={0.05} onChange={(value) => updateLevel(0, 'splitSmoothness', value)} />
           </SectionCard>
           <SectionCard id="leader-rules" title="Leader Rules" helper="Control where leaders emerge and how strongly they compete as major structural axes." emphasis={true} activeCategories={activeCategories} toggleCategory={toggleCategory}>

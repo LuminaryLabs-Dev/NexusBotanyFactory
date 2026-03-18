@@ -24,6 +24,11 @@ const createRecipe = ({
   twigLength,
   twigPhototropism,
   twigGravity,
+  trunkDefaults = {
+    trunkUprightStrength: 0.7,
+    trunkNoiseDamping: 0.55,
+    trunkLeanLimit: 0.22,
+  },
   leaderDefaults,
   awarenessDefaults,
   terrainProfile = 'greenhouse-ridgefield',
@@ -78,6 +83,7 @@ const createRecipe = ({
     radius: 1,
     taper: 0.02,
     recursion: 3,
+    ...trunkDefaults,
     ...leaderDefaults,
     ...awarenessDefaults,
     leafCount: 5000,
@@ -125,6 +131,11 @@ export const SPECIES_RECIPES = {
     twigLength: 1.2,
     twigPhototropism: 1.5,
     twigGravity: 0.1,
+    trunkDefaults: {
+      trunkUprightStrength: 0.92,
+      trunkNoiseDamping: 0.9,
+      trunkLeanLimit: 0.12,
+    },
     leaderDefaults: {
       leaderCount: 1,
       leaderStartMin: 0.12,
@@ -172,6 +183,11 @@ export const SPECIES_RECIPES = {
     twigLength: 1.5,
     twigPhototropism: 0.8,
     twigGravity: 0.2,
+    trunkDefaults: {
+      trunkUprightStrength: 0.66,
+      trunkNoiseDamping: 0.62,
+      trunkLeanLimit: 0.22,
+    },
     leaderDefaults: {
       leaderCount: 2,
       leaderStartMin: 0.24,
@@ -219,6 +235,11 @@ export const SPECIES_RECIPES = {
     twigLength: 4,
     twigPhototropism: -0.5,
     twigGravity: 1.8,
+    trunkDefaults: {
+      trunkUprightStrength: 0.48,
+      trunkNoiseDamping: 0.34,
+      trunkLeanLimit: 0.28,
+    },
     leaderDefaults: {
       leaderCount: 1,
       leaderStartMin: 0.18,
@@ -266,6 +287,11 @@ export const SPECIES_RECIPES = {
     twigLength: 1,
     twigPhototropism: 0.6,
     twigGravity: 0.1,
+    trunkDefaults: {
+      trunkUprightStrength: 0.76,
+      trunkNoiseDamping: 0.68,
+      trunkLeanLimit: 0.18,
+    },
     leaderDefaults: {
       leaderCount: 2,
       leaderStartMin: 0.2,
@@ -313,6 +339,11 @@ export const SPECIES_RECIPES = {
     twigLength: 0.5,
     twigPhototropism: 0.2,
     twigGravity: 0.05,
+    trunkDefaults: {
+      trunkUprightStrength: 0.95,
+      trunkNoiseDamping: 0.92,
+      trunkLeanLimit: 0.1,
+    },
     leaderDefaults: {
       leaderCount: 3,
       leaderStartMin: 0.14,

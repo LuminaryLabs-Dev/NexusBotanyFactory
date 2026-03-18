@@ -20,6 +20,22 @@ const randomUnitVector = (random) => new THREE.Vector3(
   (random() - 0.5) * 2,
 ).normalize()
 
+const clampPlanarOffset = (point, origin, maxDistance) => {
+  if (maxDistance <= 0) {
+    return point.clone()
+  }
+
+  const offset = point.clone().sub(origin)
+  const planar = new THREE.Vector3(offset.x, 0, offset.z)
+  const distance = planar.length()
+  if (distance <= maxDistance || distance < EPSILON) {
+    return point.clone()
+  }
+
+  planar.multiplyScalar(maxDistance / distance)
+  return new THREE.Vector3(origin.x + planar.x, point.y, origin.z + planar.z)
+}
+
 const createCommittedSegment = ({ start, end, dir, radius, depth, axisId, isLeader, leaderClass, parentAxisId }) => ({
   start: start.clone(),
   end: end.clone(),
@@ -44,13 +60,17 @@ const computeBranchAwareness = ({
   committedSegments,
   leaderCorridors,
   random,
+  awarenessScale = 1,
+  outwardBiasScale = 1,
+  allowTermination = true,
+  minimumStepScale = 0.38,
 }) => {
   const awarenessRadius = params.branchAwarenessRadius ?? 0
   const exclusionRadius = params.branchExclusionRadius ?? 0.5
-  const repulsionStrength = params.branchRepulsionStrength ?? 0
-  const crowdingPenalty = params.branchCrowdingPenalty ?? 0
-  const deathChance = params.branchCrowdedDeathChance ?? 0
-  const outwardBias = params.branchOutwardBias ?? 0
+  const repulsionStrength = (params.branchRepulsionStrength ?? 0) * awarenessScale
+  const crowdingPenalty = (params.branchCrowdingPenalty ?? 0) * awarenessScale
+  const deathChance = allowTermination ? (params.branchCrowdedDeathChance ?? 0) * awarenessScale : 0
+  const outwardBias = (params.branchOutwardBias ?? 0) * outwardBiasScale
 
   if (awarenessRadius <= 0 || repulsionStrength <= 0) {
     return {
@@ -112,9 +132,9 @@ const computeBranchAwareness = ({
     .add(repulsion.multiplyScalar(repulsionStrength))
     .normalize()
 
-  const stepScale = THREE.MathUtils.clamp(1 - (crowding * crowdingPenalty), 0.38, 1)
+  const stepScale = THREE.MathUtils.clamp(1 - (crowding * crowdingPenalty), minimumStepScale, 1)
   const terminateThreshold = 0.9 + ((isLeader ? 0.12 : 0) * (leaderClass === 'primary' ? 1 : 0))
-  const terminate = crowding > terminateThreshold && random() < Math.min(1, deathChance + ((crowding - terminateThreshold) * 0.25))
+  const terminate = allowTermination && crowding > terminateThreshold && random() < Math.min(1, deathChance + ((crowding - terminateThreshold) * 0.25))
 
   return {
     direction: adjustedDirection,
@@ -206,6 +226,8 @@ export const generateTreeData = (params, options = {}) => {
 
     const level = params.levels[Math.min(depth, params.levels.length - 1)]
     const segments = Math.max(3, level.segments)
+    const axisOrigin = startPos.clone()
+    const isBaseTrunk = depth === 0 && !axisContext.isLeader
     let currentPos = startPos.clone()
     let currentDir = startDir.clone().normalize()
     const nodePoints = []
@@ -232,12 +254,18 @@ export const generateTreeData = (params, options = {}) => {
 
     for (let index = 1; index <= segments; index += 1) {
       const t = index / segments
+      const trunkUprightStrength = THREE.MathUtils.clamp(params.trunkUprightStrength ?? 0.7, 0, 1)
+      const trunkNoiseDamping = THREE.MathUtils.clamp(params.trunkNoiseDamping ?? 0.55, 0, 1)
+      const trunkLeanLimit = Math.max(params.trunkLeanLimit ?? 0.22, 0.02)
+      const trunkAwarenessScale = isBaseTrunk ? THREE.MathUtils.lerp(0.65, 0.18, trunkUprightStrength) : 1
+      const trunkOutwardBiasScale = isBaseTrunk ? THREE.MathUtils.lerp(0.4, 0.05, trunkUprightStrength) : 1
+      const curveStrength = isBaseTrunk ? level.curve * (1 - trunkNoiseDamping) : level.curve
       const tropVec = UP.clone().multiplyScalar(params.tropismUp * 0.1)
       const gravVec = UP.clone().multiplyScalar(-params.gravity * 0.15 * t)
       const noise = new THREE.Vector3(
-        (random() - 0.5) * level.curve,
-        (random() - 0.5) * level.curve,
-        (random() - 0.5) * level.curve,
+        (random() - 0.5) * curveStrength,
+        (random() - 0.5) * curveStrength,
+        (random() - 0.5) * curveStrength,
       ).multiplyScalar(0.2)
 
       const naturalDir = currentDir.clone().add(tropVec).add(gravVec).add(noise).normalize()
@@ -256,6 +284,10 @@ export const generateTreeData = (params, options = {}) => {
         committedSegments,
         leaderCorridors,
         random,
+        awarenessScale: trunkAwarenessScale,
+        outwardBiasScale: trunkOutwardBiasScale,
+        allowTermination: !isBaseTrunk,
+        minimumStepScale: isBaseTrunk ? 0.92 : 0.38,
       })
 
       if (awareness.terminate && index > Math.ceil(segments * 0.45)) {
@@ -263,9 +295,21 @@ export const generateTreeData = (params, options = {}) => {
         break
       }
 
-      currentDir.copy(awareness.direction)
+      if (isBaseTrunk) {
+        const stableUp = UP.clone().multiplyScalar(1 + (params.tropismUp * 0.1)).normalize()
+        const uprightWeight = THREE.MathUtils.lerp(trunkUprightStrength, trunkUprightStrength * 0.55, t)
+        currentDir.copy(awareness.direction.clone().lerp(stableUp, uprightWeight).normalize())
+      } else {
+        currentDir.copy(awareness.direction)
+      }
       const stepLength = stepLengthBase * awareness.stepScale
-      const nextPos = currentPos.clone().add(currentDir.clone().multiplyScalar(stepLength))
+      let nextPos = currentPos.clone().add(currentDir.clone().multiplyScalar(stepLength))
+      if (isBaseTrunk) {
+        const heightGain = Math.max(nextPos.y - axisOrigin.y, stepLength * 0.65)
+        const maxPlanarOffset = (heightGain * trunkLeanLimit) + (radius * 0.15)
+        nextPos = clampPlanarOffset(nextPos, axisOrigin, maxPlanarOffset)
+        currentDir.copy(nextPos.clone().sub(currentPos).normalize())
+      }
       const currentRadius = radius * (1 - (t * (1 - params.taper)))
 
       const newBoneId = skeleton.length
