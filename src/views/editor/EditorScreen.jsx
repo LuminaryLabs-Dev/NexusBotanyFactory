@@ -15,38 +15,46 @@ export default function EditorScreen() {
   const library = useLibraryViewModel()
 
   return (
-    <div className="flex flex-col h-screen w-full bg-[#050505] text-white overflow-hidden select-none">
-      <header className="h-14 shrink-0 bg-[#0c0c0c] border-b border-white/10 px-6 flex items-center justify-between z-30 shadow-xl">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center shadow-lg">
-            <Trees size={20} className="text-black" />
+    <div className="greenhouse-shell flex flex-col h-screen w-full overflow-hidden select-none text-[color:var(--text-primary)]">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute left-[-10%] top-[-8%] h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgba(210,244,219,0.9),rgba(210,244,219,0)_68%)] blur-3xl" />
+        <div className="absolute right-[-8%] top-[12%] h-[24rem] w-[24rem] rounded-full bg-[radial-gradient(circle,rgba(168,221,183,0.55),rgba(168,221,183,0)_72%)] blur-3xl" />
+      </div>
+      <header className="glass-panel-strong relative mx-4 mt-4 h-16 shrink-0 rounded-[1.4rem] px-6 flex items-center justify-between z-30">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-[1rem] border border-white/70 bg-[linear-gradient(180deg,rgba(240,255,244,0.95),rgba(149,205,165,0.55))] shadow-[0_16px_34px_rgba(92,157,108,0.22)]">
+            <Trees size={20} className="text-[color:var(--accent-moss)]" />
           </div>
-          <h1 className="text-sm font-black uppercase tracking-[0.2em]">NexusBotanyFactory</h1>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.35em] text-[color:var(--text-muted)]">Greenhouse Lab</p>
+            <h1 className="text-sm font-black uppercase tracking-[0.24em] text-[color:var(--text-primary)]">NexusBotanyFactory</h1>
+          </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={editor.randomizeSeed} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-[9px] font-black uppercase tracking-widest">Randomize</button>
-          <button onClick={editor.saveAsset} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-[9px] font-black uppercase tracking-widest">Save</button>
+          <button onClick={editor.randomizeSeed} className="glass-button rounded-[1rem] px-4 py-2 text-[9px] font-black uppercase tracking-[0.24em]">Randomize</button>
+          <button onClick={editor.saveAsset} className="glass-button active rounded-[1rem] px-4 py-2 text-[9px] font-black uppercase tracking-[0.24em]">Save</button>
         </div>
       </header>
-      <div className="flex-1 flex overflow-hidden">
-        <main className="flex-1 relative overflow-hidden bg-white">
+      <div className="relative flex flex-1 overflow-hidden px-4 pb-4 pt-3">
+        <main className="glass-panel-strong relative flex-1 overflow-hidden rounded-[2rem] border border-white/60">
+          <div className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.2),transparent_34%),linear-gradient(180deg,rgba(249,255,250,0.12),rgba(255,255,255,0)_28%)]" />
           <BotanyViewport specimen={editor.specimen} generated={editor.generated} debugMode={editor.debugMode} />
-          <div className="absolute top-6 right-6 flex bg-black/40 backdrop-blur-md border border-white/10 rounded-xl p-1 gap-0.5 shadow-2xl">
+          <div className="glass-panel absolute top-6 right-6 z-20 flex gap-1 rounded-[1.2rem] p-1.5">
             {['shaded', 'wireframe', 'skeleton'].map((mode) => (
               <button
                 key={mode}
                 onClick={() => editor.setDebugMode(mode)}
-                className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${editor.debugMode === mode ? 'bg-emerald-500 text-white' : 'text-gray-300 hover:text-white'}`}
+                className={`glass-button rounded-[0.95rem] px-4 py-2 text-[9px] font-black uppercase tracking-[0.22em] transition-all ${editor.debugMode === mode ? 'active' : ''}`}
               >
                 {mode}
               </button>
             ))}
           </div>
         </main>
-        <aside className="w-[340px] bg-[#0c0c0c] border-l border-white/10 flex flex-col z-20 shadow-2xl overflow-hidden">
-          <div className="flex w-full bg-black/40 border-b border-white/5 shrink-0">
-            <button onClick={() => editor.setActiveTab('inspector')} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] ${editor.activeTab === 'inspector' ? 'text-emerald-400 border-b-2 border-emerald-500 bg-white/5' : 'text-gray-500 hover:text-white'}`}>Inspector</button>
-            <button onClick={() => editor.setActiveTab('library')} className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] ${editor.activeTab === 'library' ? 'text-emerald-400 border-b-2 border-emerald-500 bg-white/5' : 'text-gray-500 hover:text-white'}`}>Library</button>
+        <aside className="glass-panel relative ml-4 flex w-[360px] flex-col overflow-hidden rounded-[2rem] border border-white/60">
+          <div className="flex w-full shrink-0 gap-2 border-b border-white/30 p-3">
+            <button onClick={() => editor.setActiveTab('inspector')} className={`glass-button flex-1 rounded-[1rem] py-3 text-[10px] font-black uppercase tracking-[0.22em] ${editor.activeTab === 'inspector' ? 'active' : ''}`}>Inspector</button>
+            <button onClick={() => editor.setActiveTab('library')} className={`glass-button flex-1 rounded-[1rem] py-3 text-[10px] font-black uppercase tracking-[0.22em] ${editor.activeTab === 'library' ? 'active' : ''}`}>Library</button>
           </div>
           {editor.activeTab === 'inspector' ? (
             <InspectorPanel

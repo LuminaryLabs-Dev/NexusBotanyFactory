@@ -3,9 +3,9 @@
 function Slider({ label, value, min, max, step = 0.1, suffix = '', onChange }) {
   return (
     <div className="space-y-1 w-full">
-      <div className="flex justify-between items-center text-[9px] text-gray-400 font-black uppercase tracking-widest">
+      <div className="flex justify-between items-center text-[9px] text-[color:var(--text-muted)] font-black uppercase tracking-[0.22em]">
         <label className="truncate pr-2">{label}</label>
-        <span className="text-emerald-400 font-mono shrink-0">{value}{suffix}</span>
+        <span className="font-mono shrink-0 text-[color:var(--accent-moss)]">{value}{suffix}</span>
       </div>
       <input
         type="range"
@@ -14,7 +14,7 @@ function Slider({ label, value, min, max, step = 0.1, suffix = '', onChange }) {
         step={step}
         value={value}
         onChange={(event) => onChange(parseFloat(event.target.value))}
-        className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-emerald-500"
+        className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-[linear-gradient(90deg,rgba(132,176,143,0.34),rgba(255,255,255,0.8),rgba(132,176,143,0.34))] accent-[color:var(--accent-moss)]"
       />
     </div>
   )
@@ -22,9 +22,9 @@ function Slider({ label, value, min, max, step = 0.1, suffix = '', onChange }) {
 
 export default function LevelControls({ params, activeCategories, toggleCategory, updateLevel }) {
   return Array.from({ length: params.recursion + 1 }).map((_, depth) => (
-    <div key={`lvl-${depth}`} className="border-t border-white/5 py-1">
-      <button onClick={() => toggleCategory(`lvl-${depth}`)} className="w-full flex items-center justify-between py-2.5 text-gray-400 hover:text-white">
-        <span className="text-[10px] font-black uppercase tracking-widest">Layer {depth} {depth === 0 ? '(Trunk)' : ''}</span>
+    <div key={`lvl-${depth}`} className="border-t border-white/25 py-2">
+      <button onClick={() => toggleCategory(`lvl-${depth}`)} className="flex w-full items-center justify-between py-2.5 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]">
+        <span className="text-[10px] font-black uppercase tracking-[0.24em]">Layer {depth} {depth === 0 ? '(Trunk)' : ''}</span>
         <span>{activeCategories.includes(`lvl-${depth}`) ? '−' : '+'}</span>
       </button>
       {activeCategories.includes(`lvl-${depth}`) && (

@@ -2,8 +2,8 @@
 
 export default function StatsFooter({ boneCount, status, error }) {
   return (
-    <div className="p-4 shrink-0 border-t border-white/10 bg-black/20 text-[8px] font-black uppercase tracking-widest text-gray-600 flex justify-between items-center">
-      <span>{error ? `Error: ${error}` : `Status: ${status}`}</span>
+    <div className="flex items-center justify-between border-t border-white/30 bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(210,228,214,0.08))] px-4 py-4 text-[8px] font-black uppercase tracking-[0.26em] text-[color:var(--text-muted)]">
+      <span className="max-w-[70%] truncate">{error ? `Error: ${error}` : `Status: ${status}`}</span>
       <span className="tabular-nums">Bones: {boneCount}</span>
     </div>
   )

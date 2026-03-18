@@ -7,6 +7,34 @@ import { createNoise2D } from '../../models/botany/generation/noise.js'
 import { buildTreeGeometry } from '../../models/botany/generation/geometry.js'
 import { getOrbitCameraPose } from '../../models/botany/generation/camera.js'
 
+const carveTerrainHeight = (x, z, noise) => {
+  const ridgeAxis = (x * 0.0038) + (z * 0.0014)
+  const ridgeNoise = noise((x * 0.0045) + 104, (z * 0.0045) - 62) * 18
+  const carvedNoise = noise((x * 0.012) + 420, (z * 0.012) - 128) * 8.5
+  const fineNoise = noise((x * 0.028) - 70, (z * 0.028) + 211) * 2.2
+  const ridgeBands = Math.sin(ridgeAxis * 18) * 10.5
+  const terraces = Math.round(((ridgeNoise + ridgeBands) / 5.25)) * 1.8
+  const channels = -Math.pow(Math.abs(noise((x * 0.008) - 250, (z * 0.008) + 340)), 2.2) * 15
+  const plateauMask = Math.exp(-(((x * x) + (z * z)) / (145 * 145)))
+  const plantingRise = plateauMask * 5.8
+  const plantingFlatten = plateauMask * ((ridgeNoise * 0.85) + ridgeBands + carvedNoise)
+  return (ridgeNoise + ridgeBands + terraces + channels + carvedNoise + fineNoise + plantingRise) - plantingFlatten
+}
+
+const getTerrainColor = (height, slope) => {
+  const low = new THREE.Color('#769475')
+  const mid = new THREE.Color('#91a886')
+  const high = new THREE.Color('#b8b7a4')
+  const moss = new THREE.Color('#638565')
+  const sediment = new THREE.Color('#d9d3be')
+  const heightMix = THREE.MathUtils.clamp((height + 24) / 58, 0, 1)
+  const slopeMix = THREE.MathUtils.clamp(slope * 2.4, 0, 1)
+  const base = low.clone().lerp(mid, heightMix).lerp(high, Math.max(0, heightMix - 0.45) * 1.6)
+  base.lerp(moss, Math.max(0, 1 - slopeMix) * 0.28)
+  base.lerp(sediment, slopeMix * 0.42)
+  return base
+}
+
 export default function BotanyViewport({ specimen, generated, debugMode }) {
   const mountRef = useRef(null)
   const rendererRef = useRef(null)
@@ -41,25 +69,29 @@ export default function BotanyViewport({ specimen, generated, debugMode }) {
     canvas.height = 512
     const context = canvas.getContext('2d')
     const gradient = context.createLinearGradient(0, 0, 0, 512)
-    gradient.addColorStop(0, '#357ae8')
-    gradient.addColorStop(0.38, '#ffffff')
-    gradient.addColorStop(1, '#ffffff')
+    gradient.addColorStop(0, '#b6d7cf')
+    gradient.addColorStop(0.45, '#dcefe5')
+    gradient.addColorStop(0.78, '#edf5ef')
+    gradient.addColorStop(1, '#f8faf6')
     context.fillStyle = gradient
     context.fillRect(0, 0, 1, 512)
     scene.background = new THREE.CanvasTexture(canvas)
-    scene.fog = new THREE.Fog('#ffffff', 400, 1000)
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.6))
-    const keyLight = new THREE.DirectionalLight(0xfff5e6, 2.5)
-    keyLight.position.set(30, 60, 30)
+    scene.fog = new THREE.Fog('#e8f1ea', 900, 2200)
+    scene.add(new THREE.HemisphereLight(0xf4fff6, 0x718468, 1.1))
+    const keyLight = new THREE.DirectionalLight(0xfff7e8, 2.8)
+    keyLight.position.set(52, 94, 22)
     keyLight.castShadow = true
     keyLight.shadow.mapSize.set(2048, 2048)
     keyLight.shadow.bias = -0.0005
     scene.add(keyLight)
-    const fillLight = new THREE.DirectionalLight(0xaaccff, 1.2)
-    fillLight.position.set(-40, 30, -40)
+    const fillLight = new THREE.DirectionalLight(0xd7f1ea, 1.6)
+    fillLight.position.set(-85, 42, -70)
     scene.add(fillLight)
+    const bounceLight = new THREE.DirectionalLight(0x95a988, 0.45)
+    bounceLight.position.set(0, 14, 120)
+    scene.add(bounceLight)
 
-    const terrainGeo = new THREE.PlaneGeometry(1400, 1400, 100, 100)
+    const terrainGeo = new THREE.PlaneGeometry(2800, 2800, 180, 180)
     terrainGeo.rotateX(-Math.PI / 2)
     const colorAttr = new THREE.BufferAttribute(new Float32Array(terrainGeo.attributes.position.count * 3), 3)
     terrainGeo.setAttribute('color', colorAttr)
@@ -67,14 +99,20 @@ export default function BotanyViewport({ specimen, generated, debugMode }) {
     for (let index = 0; index < terrainGeo.attributes.position.count; index += 1) {
       const x = terrainGeo.attributes.position.getX(index)
       const z = terrainGeo.attributes.position.getZ(index)
-      const distance = Math.sqrt((x * x) + (z * z))
-      const y = (noise(x * 0.02, z * 0.02) * 4) + (Math.pow(distance / 600, 4) * 50)
+      const y = carveTerrainHeight(x, z, noise)
       terrainGeo.attributes.position.setY(index, y)
-      const color = new THREE.Color(distance < 40 ? '#3a6b2a' : '#efefef')
+      const dx = carveTerrainHeight(x + 3, z, noise) - y
+      const dz = carveTerrainHeight(x, z + 3, noise) - y
+      const slope = Math.sqrt((dx * dx) + (dz * dz)) / 3
+      const color = getTerrainColor(y, slope)
       colorAttr.setXYZ(index, color.r, color.g, color.b)
     }
     terrainGeo.computeVertexNormals()
-    const terrainMaterial = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 })
+    const terrainMaterial = new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.95,
+      metalness: 0.02,
+    })
     const terrain = new THREE.Mesh(terrainGeo, terrainMaterial)
     terrain.receiveShadow = true
     scene.add(terrain)

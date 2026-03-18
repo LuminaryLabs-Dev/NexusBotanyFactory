@@ -9,7 +9,7 @@ export default function PresetPicker({ activePresetName, onApplyPreset }) {
         <button
           key={name}
           onClick={() => onApplyPreset(name)}
-          className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all border ${activePresetName === name ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' : 'bg-white/5 border-transparent text-gray-500 hover:text-white'}`}
+          className={`glass-chip px-3 py-2 rounded-[0.95rem] text-[9px] font-black uppercase tracking-[0.22em] transition-all ${activePresetName === name ? 'active' : ''}`}
         >
           {name}
         </button>

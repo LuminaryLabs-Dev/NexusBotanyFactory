@@ -2,23 +2,25 @@
 
 export default function LibraryPanel({ assets, loading, onLoadAsset, onSaveAsset, specimen }) {
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-[#090909]/40 min-h-0">
-      <button onClick={onSaveAsset} className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">
+    <div className="greenhouse-scrollbar flex-1 overflow-y-auto p-4 space-y-4 min-h-0 text-[color:var(--text-secondary)]">
+      <button onClick={onSaveAsset} className="glass-button active w-full rounded-[1.1rem] py-3 text-[10px] font-black uppercase tracking-[0.24em]">
         Save Specimen
       </button>
-      <div className="text-[9px] uppercase tracking-widest text-gray-500">Current: {specimen.name}</div>
+      <div className="rounded-[1rem] border border-white/40 bg-white/20 px-3 py-2 text-[9px] uppercase tracking-[0.22em] text-[color:var(--text-muted)]">
+        Current: <span className="text-[color:var(--text-primary)]">{specimen.name}</span>
+      </div>
       {loading ? (
-        <p className="text-center text-[10px] font-black tracking-widest text-gray-600 mt-10">Loading library...</p>
+        <p className="mt-10 text-center text-[10px] font-black tracking-[0.24em] text-[color:var(--text-muted)]">Loading library...</p>
       ) : assets.length === 0 ? (
-        <p className="text-center text-[10px] font-black tracking-widest text-gray-600 mt-10">Empty Library.</p>
+        <p className="mt-10 text-center text-[10px] font-black tracking-[0.24em] text-[color:var(--text-muted)]">Empty Library.</p>
       ) : (
         <div className="space-y-3 mt-4">
           {assets.map((asset) => (
-            <div key={asset.id} className="bg-black/40 border border-white/10 p-3 rounded-xl">
+            <div key={asset.id} className="glass-panel rounded-[1.25rem] p-3">
               <div className="flex justify-between items-center mb-2">
-                <h3 className="text-[10px] font-black text-emerald-400 truncate">{asset.name}</h3>
+                <h3 className="truncate text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--accent-moss)]">{asset.name}</h3>
               </div>
-              <button onClick={() => onLoadAsset(asset.id)} className="w-full py-1.5 bg-white/10 hover:bg-white/20 rounded-md text-[9px] font-black uppercase tracking-widest">
+              <button onClick={() => onLoadAsset(asset.id)} className="glass-button w-full rounded-[0.9rem] py-2 text-[9px] font-black uppercase tracking-[0.22em]">
                 Load
               </button>
             </div>
