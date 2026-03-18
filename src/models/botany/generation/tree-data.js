@@ -11,6 +11,7 @@ export const generateTreeData = (params, options = {}) => {
   const growthStrategy = options.growthStrategy
   const broadleafMode = options.mode === 'broadleaf'
   const coniferMode = options.mode === 'conifer'
+  const leaderRoots = []
 
   const isAnchor = (depth, t) => leafPlacementStrategy?.isAnchor({ params, depth, t })
 
@@ -67,6 +68,39 @@ export const generateTreeData = (params, options = {}) => {
     nodes.push({ points: nodePoints, depth, parentIdx: parentBranchIdx })
 
     if (depth >= params.recursion) return
+
+    if (depth === 0) {
+      const maxLeaders = Math.max(0, Math.min(params.leaderCount ?? 0, 6))
+      const startMin = THREE.MathUtils.clamp(params.leaderStartMin ?? 0.2, 0, 1)
+      const startMax = THREE.MathUtils.clamp(Math.max(startMin, params.leaderStartMax ?? 0.5), 0, 1)
+      const leaderChance = THREE.MathUtils.clamp(params.leaderSplitChance ?? 0.2, 0, 1)
+
+      for (let leaderIndex = 0; leaderIndex < maxLeaders; leaderIndex += 1) {
+        if (random() > leaderChance) continue
+        const t = startMin + ((startMax - startMin) * ((leaderIndex + 0.5) / Math.max(maxLeaders, 1)))
+        const spawnIdx = THREE.MathUtils.clamp(Math.floor(t * segments), 1, segments)
+        const spawnPoint = nodePoints[spawnIdx]
+        const dominance = params.leaderDominance ?? 0.9
+        const lengthBias = params.leaderLengthBias ?? 1
+        const thicknessRetention = params.leaderThicknessRetention ?? 0.8
+        const inheritance = params.leaderInheritance ?? 0.7
+        const upwardBias = params.leaderUpwardBias ?? 1
+        const radialDir = new THREE.Vector3().crossVectors(spawnPoint.dir, new THREE.Vector3(0, 1, 0)).normalize()
+        if (radialDir.lengthSq() < 0.01) radialDir.set(1, 0, 0)
+        radialDir.applyAxisAngle(spawnPoint.dir, ((leaderIndex / Math.max(maxLeaders, 1)) * Math.PI * 2) + (random() - 0.5))
+
+        const leaderDir = spawnPoint.dir.clone()
+          .lerp(radialDir, (1 - inheritance) * 0.65)
+          .add(new THREE.Vector3(0, upwardBias * 0.45, 0))
+          .normalize()
+
+        const leaderLength = (params.height * 0.6 * lengthBias * dominance) * (0.75 + random() * 0.25) * (1 - (t * 0.35))
+        const leaderRadius = spawnPoint.radius * thicknessRetention * (0.9 + random() * 0.15)
+        if (leaderLength > 0.15 && leaderRadius > 0.01) {
+          leaderRoots.push({ pos: spawnPoint.pos.clone(), dir: leaderDir, length: leaderLength, radius: leaderRadius, boneId: spawnPoint.boneId })
+        }
+      }
+    }
 
     const childCount = growthStrategy?.getChildCount(level.branchCount, random) ?? Math.max(0, Math.floor(level.branchCount + (random() * 0.5)))
     let currentSpin = random() * Math.PI * 2
@@ -129,6 +163,9 @@ export const generateTreeData = (params, options = {}) => {
   }
 
   grow(new THREE.Vector3(0, 1.25, 0), new THREE.Vector3(0, 1, 0), params.height, params.radius, 0, -1, -1)
+  leaderRoots.forEach((leaderRoot) => {
+    grow(leaderRoot.pos, leaderRoot.dir, leaderRoot.length, leaderRoot.radius, 1, 0, leaderRoot.boneId)
+  })
 
   const twigLeafAnchors = []
   const maxTwigSpawns = Math.min(anchorSegments.length, 1200)

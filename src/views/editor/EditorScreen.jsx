@@ -40,7 +40,7 @@ export default function EditorScreen() {
           <div className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.2),transparent_34%),linear-gradient(180deg,rgba(249,255,250,0.12),rgba(255,255,255,0)_28%)]" />
           <BotanyViewport specimen={editor.specimen} generated={editor.generated} debugMode={editor.debugMode} />
           <div className="glass-panel absolute top-6 right-6 z-20 flex gap-1 rounded-[1.2rem] p-1.5">
-            {['shaded', 'wireframe', 'skeleton'].map((mode) => (
+            {['beauty', 'structure', 'bones', 'leaf-density'].map((mode) => (
               <button
                 key={mode}
                 onClick={() => editor.setDebugMode(mode)}
@@ -53,10 +53,11 @@ export default function EditorScreen() {
         </main>
         <aside className="glass-panel relative ml-4 flex w-[360px] flex-col overflow-hidden rounded-[2rem] border border-white/60">
           <div className="flex w-full shrink-0 gap-2 border-b border-white/30 p-3">
-            <button onClick={() => editor.setActiveTab('inspector')} className={`glass-button flex-1 rounded-[1rem] py-3 text-[10px] font-black uppercase tracking-[0.22em] ${editor.activeTab === 'inspector' ? 'active' : ''}`}>Inspector</button>
+            <button onClick={() => editor.setActiveTab('build')} className={`glass-button flex-1 rounded-[1rem] py-3 text-[10px] font-black uppercase tracking-[0.22em] ${editor.activeTab === 'build' ? 'active' : ''}`}>Build</button>
+            <button onClick={() => editor.setActiveTab('refine')} className={`glass-button flex-1 rounded-[1rem] py-3 text-[10px] font-black uppercase tracking-[0.22em] ${editor.activeTab === 'refine' ? 'active' : ''}`}>Refine</button>
             <button onClick={() => editor.setActiveTab('library')} className={`glass-button flex-1 rounded-[1rem] py-3 text-[10px] font-black uppercase tracking-[0.22em] ${editor.activeTab === 'library' ? 'active' : ''}`}>Library</button>
           </div>
-          {editor.activeTab === 'inspector' ? (
+          {(editor.activeTab === 'build' || editor.activeTab === 'refine') ? (
             <InspectorPanel
               specimen={editor.specimen}
               activeCategories={editor.activeCategories}
@@ -64,6 +65,8 @@ export default function EditorScreen() {
               applyPreset={editor.applyPreset}
               updateParam={editor.updateParam}
               updateLevel={editor.updateLevel}
+              activeTab={editor.activeTab}
+              getLevelSummary={editor.getLevelSummary}
             />
           ) : (
             <LibraryPanel

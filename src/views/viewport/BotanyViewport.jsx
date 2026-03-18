@@ -174,10 +174,15 @@ export default function BotanyViewport({ specimen, generated, debugMode }) {
     controlsRef.current.target.copy(target)
     controlsRef.current.update()
 
-    if (debugMode !== 'skeleton') {
+    const showBones = debugMode === 'bones'
+    const showLeafDensity = debugMode === 'leaf-density'
+    const showStructure = debugMode === 'structure'
+
+    if (!showBones) {
       const trunkMaterial = new THREE.MeshStandardMaterial({
-        color: specimen.params.barkColor,
+        color: showStructure ? '#ecfff1' : specimen.params.barkColor,
         roughness: Math.max(0.25, 1 - (barkUniforms.uFiber.value.value * 0.2)),
+        wireframe: showStructure,
       })
       const trunkMesh = new THREE.Mesh(buildTreeGeometry(generated.treeData), trunkMaterial)
       trunkMesh.castShadow = true
@@ -185,12 +190,28 @@ export default function BotanyViewport({ specimen, generated, debugMode }) {
       treeGroupRef.current.add(trunkMesh)
     }
 
-    if (specimen.params.leafCount > 0 && generated.treeData.leafInstances.length > 0) {
+    if (showBones && generated.treeData.skeleton.length > 1) {
+      const points = []
+      generated.treeData.skeleton.forEach((bone) => {
+        if (bone.parentId == null || bone.parentId < 0) return
+        const parent = generated.treeData.skeleton.find((candidate) => candidate.id === bone.parentId)
+        if (!parent) return
+        points.push(parent.pos, bone.pos)
+      })
+      const geometry = new THREE.BufferGeometry().setFromPoints(points)
+      const material = new THREE.LineBasicMaterial({ color: '#456853' })
+      const lineSegments = new THREE.LineSegments(geometry, material)
+      treeGroupRef.current.add(lineSegments)
+    }
+
+    if (specimen.params.leafCount > 0 && generated.treeData.leafInstances.length > 0 && !showBones) {
       const leafGeometry = new THREE.PlaneGeometry(1, 1)
       const leafMaterial = new THREE.MeshStandardMaterial({
-        color: specimen.params.leafColor,
+        color: showLeafDensity ? '#7bd38e' : specimen.params.leafColor,
         side: THREE.DoubleSide,
         roughness: 0.8,
+        transparent: showLeafDensity,
+        opacity: showLeafDensity ? 0.55 : 1,
       })
       const leaves = new THREE.InstancedMesh(leafGeometry, leafMaterial, generated.treeData.leafInstances.length)
       const dummy = new THREE.Object3D()

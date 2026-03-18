@@ -15,9 +15,9 @@ const createInitialSpecimen = () => ({
 
 export const useEditorViewModel = () => {
   const [specimen, setSpecimen] = useState(createInitialSpecimen)
-  const [debugMode, setDebugMode] = useState('shaded')
-  const [activeTab, setActiveTab] = useState('inspector')
-  const [activeCategories, setActiveCategories] = useState(['global', 'lvl-0', 'cam', 'foliage'])
+  const [debugMode, setDebugMode] = useState('beauty')
+  const [activeTab, setActiveTab] = useState('build')
+  const [activeCategories, setActiveCategories] = useState(['phenotype', 'form', 'leaders', 'preview'])
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState(null)
   const generated = useViewportViewModel(specimen)
@@ -62,6 +62,17 @@ export const useEditorViewModel = () => {
   const changeKind = (kind) => setSpecimen((current) => ({ ...current, kind }))
   const randomizeSeed = () => updateParam('seed', Math.floor(Math.random() * 2147483647))
   const toggleCategory = (id) => setActiveCategories((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id])
+
+  const getLevelSummary = (depth) => {
+    const level = specimen.params.levels[depth]
+    if (!level) return 'No settings'
+    const parts = [
+      `${level.branchCount ?? 0} branches`,
+      `angle ${Number(level.branchAngle ?? 0).toFixed(1)}`,
+      `curve ${Number(level.curve ?? 0).toFixed(1)}`,
+    ]
+    return parts.join(' · ')
+  }
 
   const saveAsset = async () => {
     setStatus('saving')
@@ -113,6 +124,7 @@ export const useEditorViewModel = () => {
     applyPreset,
     changeKind,
     randomizeSeed,
+    getLevelSummary,
     setDebugMode,
     setActiveTab,
     toggleCategory,

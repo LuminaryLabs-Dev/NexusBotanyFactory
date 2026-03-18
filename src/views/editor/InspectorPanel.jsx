@@ -32,6 +32,21 @@ function ColorPicker({ label, value, onChange }) {
   )
 }
 
+function SectionCard({ id, title, helper, children, emphasis = false, activeCategories, toggleCategory }) {
+  return (
+    <div className={`${emphasis ? 'glass-panel-strong' : 'glass-panel'} rounded-[1.35rem] px-4 py-4`}>
+      <button onClick={() => toggleCategory(id)} className="flex w-full items-center justify-between text-left text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]">
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-[0.26em]">{title}</div>
+          <div className="pt-1 text-[10px] font-medium text-[color:var(--text-muted)]">{helper}</div>
+        </div>
+        <span className="pl-4 text-sm">{activeCategories.includes(id) ? '−' : '+'}</span>
+      </button>
+      {activeCategories.includes(id) && <div className="pt-4 space-y-3">{children}</div>}
+    </div>
+  )
+}
+
 export default function InspectorPanel({
   specimen,
   activeCategories,
@@ -39,47 +54,73 @@ export default function InspectorPanel({
   applyPreset,
   updateParam,
   updateLevel,
+  activeTab,
+  getLevelSummary,
 }) {
   const { params } = specimen
+  const isBuild = activeTab === 'build'
+
   return (
-    <div className="greenhouse-scrollbar flex-1 overflow-y-auto p-4 space-y-0 min-h-0 text-[color:var(--text-secondary)]">
-      <div className="mb-4 text-[9px] font-black uppercase tracking-[0.28em] text-[color:var(--text-muted)]">Base Phenotype</div>
-      <PresetPicker activePresetName={params.name} onApplyPreset={applyPreset} />
-      <div className="border-t border-white/25 py-2">
-        <button onClick={() => toggleCategory('cam')} className="flex w-full items-center justify-between py-2.5 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]">
-          <span className="text-[10px] font-black uppercase tracking-[0.24em]">Orbit Cam</span>
-          <span>{activeCategories.includes('cam') ? '−' : '+'}</span>
-        </button>
-        {activeCategories.includes('cam') && (
-          <div className="pt-2 pb-4 space-y-3">
-            <Slider label="Angle (Yaw)" value={params.camYaw ?? 45} min={-360} max={360} step={1} onChange={(value) => updateParam('camYaw', value)} />
+    <div className="greenhouse-scrollbar flex-1 overflow-y-auto p-4 space-y-4 min-h-0 text-[color:var(--text-secondary)]">
+      {isBuild ? (
+        <>
+          <SectionCard id="phenotype" title="Phenotype" helper="Start with the species archetype and overall growth personality." activeCategories={activeCategories} toggleCategory={toggleCategory}>
+            <PresetPicker activePresetName={params.name} onApplyPreset={applyPreset} />
+          </SectionCard>
+          <SectionCard id="form" title="Base Form" helper="Control the true trunk and whole-tree silhouette before branch tuning." activeCategories={activeCategories} toggleCategory={toggleCategory}>
+            <Slider label="Branch Levels" value={params.recursion} min={1} max={5} step={1} onChange={(value) => updateParam('recursion', value)} />
+            <Slider label="Tree Height" value={params.height} min={2} max={80} suffix="m" onChange={(value) => updateParam('height', value)} />
+            <Slider label="Trunk Thickness" value={params.radius} min={0.1} max={5} onChange={(value) => updateParam('radius', value)} />
+            <Slider label="Trunk Taper" value={params.taper} min={0.01} max={1} onChange={(value) => updateParam('taper', value)} />
+            <Slider label="Leaf Density" value={params.leafCount} min={0} max={20000} step={100} onChange={(value) => updateParam('leafCount', value)} />
+          </SectionCard>
+          <SectionCard id="leaders" title="Leader System" helper="Leaders are dominant trunk-like splits that compete with the main axis." emphasis={true} activeCategories={activeCategories} toggleCategory={toggleCategory}>
+            <Slider label="Leader Count" value={params.leaderCount} min={0} max={4} step={1} onChange={(value) => updateParam('leaderCount', value)} />
+            <Slider label="Leader Split Chance" value={params.leaderSplitChance} min={0} max={1} step={0.05} onChange={(value) => updateParam('leaderSplitChance', value)} />
+            <Slider label="Leader Upward Bias" value={params.leaderUpwardBias} min={0} max={2} step={0.05} onChange={(value) => updateParam('leaderUpwardBias', value)} />
+            <Slider label="Leader Dominance" value={params.leaderDominance} min={0} max={1.5} step={0.05} onChange={(value) => updateParam('leaderDominance', value)} />
+          </SectionCard>
+          <SectionCard id="primary" title="Primary Branches" helper="Shape the first true lateral branch layer, not the trunk itself." activeCategories={activeCategories} toggleCategory={toggleCategory}>
+            <Slider label="Side Branch Count" value={params.levels[0]?.branchCount ?? 0} min={0} max={20} step={1} onChange={(value) => updateLevel(0, 'branchCount', value)} />
+            <Slider label="Branch Angle" value={params.levels[0]?.branchAngle ?? 1} min={0.1} max={3} onChange={(value) => updateLevel(0, 'branchAngle', value)} />
+            <Slider label="Branch Length" value={params.levels[0]?.lengthScale ?? 0.75} min={0.1} max={1.5} onChange={(value) => updateLevel(0, 'lengthScale', value)} />
+            <Slider label="Branch Thickness Falloff" value={params.levels[0]?.radiusScale ?? 0.7} min={0.1} max={1} onChange={(value) => updateLevel(0, 'radiusScale', value)} />
+          </SectionCard>
+          <SectionCard id="preview" title="Preview" helper="Inspect the specimen from different task-oriented view modes." activeCategories={activeCategories} toggleCategory={toggleCategory}>
+            <Slider label="Yaw" value={params.camYaw ?? 45} min={-360} max={360} step={1} onChange={(value) => updateParam('camYaw', value)} />
             <Slider label="Pitch" value={params.camPitch ?? 15} min={-89} max={89} step={1} onChange={(value) => updateParam('camPitch', value)} />
             <Slider label="Distance" value={params.camDist ?? 100} min={10} max={400} step={1} onChange={(value) => updateParam('camDist', value)} />
+          </SectionCard>
+          <SectionCard id="variation" title="Variation" helper="Introduce controlled natural irregularity and seed-driven variation." activeCategories={activeCategories} toggleCategory={toggleCategory}>
+            <Slider label="Seed" value={params.seed} min={0} max={2147483647} step={1} onChange={(value) => updateParam('seed', value)} />
+            <Slider label="Leaf Scale" value={params.leafSize} min={0.05} max={1.5} onChange={(value) => updateParam('leafSize', value)} />
+          </SectionCard>
+        </>
+      ) : (
+        <>
+          <SectionCard id="trunk-rules" title="True Trunk" helper="Fine tune trunk segmentation, curvature, and how the base axis behaves." emphasis={true} activeCategories={activeCategories} toggleCategory={toggleCategory}>
+            <Slider label="Resolution" value={params.levels[0]?.segments ?? 8} min={3} max={32} step={1} onChange={(value) => updateLevel(0, 'segments', value)} />
+            <Slider label="Curvature" value={params.levels[0]?.curve ?? 0.5} min={0} max={2} onChange={(value) => updateLevel(0, 'curve', value)} />
+            <Slider label="Split Blending" value={params.levels[0]?.splitSmoothness ?? 1} min={0} max={1} step={0.05} onChange={(value) => updateLevel(0, 'splitSmoothness', value)} />
+          </SectionCard>
+          <SectionCard id="leader-rules" title="Leader Rules" helper="Control where leaders emerge and how much they inherit trunk behavior." emphasis={true} activeCategories={activeCategories} toggleCategory={toggleCategory}>
+            <Slider label="Leader Start Min" value={params.leaderStartMin} min={0} max={1} step={0.05} onChange={(value) => updateParam('leaderStartMin', value)} />
+            <Slider label="Leader Start Max" value={params.leaderStartMax} min={0} max={1} step={0.05} onChange={(value) => updateParam('leaderStartMax', value)} />
+            <Slider label="Leader Thickness Retention" value={params.leaderThicknessRetention} min={0.1} max={1.5} step={0.05} onChange={(value) => updateParam('leaderThicknessRetention', value)} />
+            <Slider label="Leader Length Bias" value={params.leaderLengthBias} min={0.2} max={2} step={0.05} onChange={(value) => updateParam('leaderLengthBias', value)} />
+            <Slider label="Leader Inheritance" value={params.leaderInheritance} min={0} max={1} step={0.05} onChange={(value) => updateParam('leaderInheritance', value)} />
+          </SectionCard>
+          <div className="space-y-3">
+            <div className="px-1 text-[10px] font-black uppercase tracking-[0.26em] text-[color:var(--text-muted)]">Branch Layers</div>
+            <LevelControls params={params} activeCategories={activeCategories} toggleCategory={toggleCategory} updateLevel={updateLevel} getLevelSummary={getLevelSummary} />
           </div>
-        )}
-      </div>
-      <div className="border-t border-white/25 py-2">
-        <button onClick={() => toggleCategory('global')} className="flex w-full items-center justify-between py-2.5 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]">
-          <span className="text-[10px] font-black uppercase tracking-[0.24em]">Base Structure</span>
-          <span>{activeCategories.includes('global') ? '−' : '+'}</span>
-        </button>
-        {activeCategories.includes('global') && (
-          <div className="pt-2 pb-4 space-y-3">
-            <Slider label="Iterative Depth" value={params.recursion} min={1} max={5} step={1} onChange={(value) => updateParam('recursion', value)} />
-            <Slider label="Vertical Height" value={params.height} min={2} max={80} suffix="m" onChange={(value) => updateParam('height', value)} />
-            <Slider label="Base Thickness" value={params.radius} min={0.1} max={5} onChange={(value) => updateParam('radius', value)} />
-            <Slider label="Trunk Taper" value={params.taper} min={0.01} max={1} onChange={(value) => updateParam('taper', value)} />
-          </div>
-        )}
-      </div>
-      <LevelControls params={params} activeCategories={activeCategories} toggleCategory={toggleCategory} updateLevel={updateLevel} />
-      <div className="border-t border-white/25 py-2">
-        <button onClick={() => toggleCategory('bark')} className="flex w-full items-center justify-between py-2.5 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]">
-          <span className="text-[10px] font-black uppercase tracking-[0.24em]">Bark Material</span>
-          <span>{activeCategories.includes('bark') ? '−' : '+'}</span>
-        </button>
-        {activeCategories.includes('bark') && (
-          <div className="pt-2 pb-4 space-y-3">
+          <SectionCard id="foliage" title="Terminal Growth" helper="Tune twig behavior, leaf coverage, and foliage attachment." activeCategories={activeCategories} toggleCategory={toggleCategory}>
+            <ColorPicker label="Leaf Color" value={params.leafColor} onChange={(value) => updateParam('leafColor', value)} />
+            <Slider label="Foliage Coverage" value={params.leafCount} min={0} max={20000} step={100} onChange={(value) => updateParam('leafCount', value)} />
+            <Slider label="Leaf Scale" value={params.leafSize} min={0.05} max={1.5} onChange={(value) => updateParam('leafSize', value)} />
+            <Slider label="Twig Density" value={params.twigDensity} min={0} max={20} step={1} onChange={(value) => updateParam('twigDensity', value)} />
+          </SectionCard>
+          <SectionCard id="bark" title="Bark Material" helper="Adjust the trunk material after the structure feels correct." activeCategories={activeCategories} toggleCategory={toggleCategory}>
             <div className="grid grid-cols-2 gap-4">
               <ColorPicker label="Base Color" value={params.barkColor} onChange={(value) => updateParam('barkColor', value)} />
               <ColorPicker label="Branch Tint" value={params.barkTint} onChange={(value) => updateParam('barkTint', value)} />
@@ -87,22 +128,9 @@ export default function InspectorPanel({
             <Slider label="Fiber" value={params.fiberIntensity} min={0} max={1} onChange={(value) => updateParam('fiberIntensity', value)} />
             <Slider label="Cracks" value={params.crackDepth} min={0} max={1} onChange={(value) => updateParam('crackDepth', value)} />
             <Slider label="Moss" value={params.mossAmount} min={0} max={1} onChange={(value) => updateParam('mossAmount', value)} />
-          </div>
-        )}
-      </div>
-      <div className="border-t border-white/25 py-2">
-        <button onClick={() => toggleCategory('foliage')} className="flex w-full items-center justify-between py-2.5 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]">
-          <span className="text-[10px] font-black uppercase tracking-[0.24em]">Foliage Shell</span>
-          <span>{activeCategories.includes('foliage') ? '−' : '+'}</span>
-        </button>
-        {activeCategories.includes('foliage') && (
-          <div className="pt-2 pb-4 space-y-3">
-            <ColorPicker label="Leaf Color" value={params.leafColor} onChange={(value) => updateParam('leafColor', value)} />
-            <Slider label="Foliage Coverage" value={params.leafCount} min={0} max={20000} step={100} onChange={(value) => updateParam('leafCount', value)} />
-            <Slider label="Leaf Scale" value={params.leafSize} min={0.05} max={1.5} onChange={(value) => updateParam('leafSize', value)} />
-          </div>
-        )}
-      </div>
+          </SectionCard>
+        </>
+      )}
     </div>
   )
 }
