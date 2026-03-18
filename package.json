@@ -5,8 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
+    "dev:api": "node src/server/runtime/dev-server.js",
+    "dev:stack": "node scripts/dev-stack.mjs",
     "build": "next build",
     "start": "npx serve out",
+    "start:api": "node src/server/runtime/dev-server.js",
     "lint": "eslint .",
     "preview": "npx serve out"
   },

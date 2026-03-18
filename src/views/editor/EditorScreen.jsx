@@ -13,6 +13,10 @@ const BotanyViewport = dynamic(() => import('../viewport/BotanyViewport.jsx'), {
 export default function EditorScreen() {
   const editor = useEditorViewModel()
   const library = useLibraryViewModel()
+  const saveAndRefreshLibrary = async () => {
+    await editor.saveAsset()
+    await library.reload()
+  }
 
   return (
     <div className="greenhouse-shell flex flex-col h-screen w-full overflow-hidden select-none text-[color:var(--text-primary)]">
@@ -32,7 +36,7 @@ export default function EditorScreen() {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={editor.randomizeSeed} className="glass-button rounded-[1rem] px-4 py-2 text-[9px] font-black uppercase tracking-[0.24em]">Randomize</button>
-          <button onClick={editor.saveAsset} className="glass-button active rounded-[1rem] px-4 py-2 text-[9px] font-black uppercase tracking-[0.24em]">Save</button>
+          <button onClick={saveAndRefreshLibrary} className="glass-button active rounded-[1rem] px-4 py-2 text-[9px] font-black uppercase tracking-[0.24em]">Save</button>
         </div>
       </header>
       <div className="relative flex flex-1 overflow-hidden px-4 pb-4 pt-3">
@@ -73,7 +77,7 @@ export default function EditorScreen() {
               assets={library.assets}
               loading={library.loading}
               onLoadAsset={editor.loadAsset}
-              onSaveAsset={editor.saveAsset}
+              onSaveAsset={saveAndRefreshLibrary}
               specimen={editor.specimen}
             />
           )}

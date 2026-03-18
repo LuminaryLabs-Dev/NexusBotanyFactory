@@ -3,8 +3,8 @@ import { CameraTargetStrategy } from '../strategies/CameraTargetStrategy.js'
 import { LeafPlacementStrategy } from '../strategies/LeafPlacementStrategy.js'
 import { BaseGrowthStrategy } from '../strategies/BranchGrowthStrategy.js'
 import { TwigGrowthStrategy } from '../strategies/TwigGrowthStrategy.js'
-import { generateTreeData } from '../generation/tree-data.js'
 import { getSpecimenOrbitTarget } from '../generation/camera.js'
+import { GenerationPipeline } from '../pipeline/GenerationPipeline.js'
 
 export class BaseBotanyFactory {
   constructor({
@@ -21,6 +21,12 @@ export class BaseBotanyFactory {
     this.leafPlacementStrategy = leafPlacementStrategy
     this.twigGrowthStrategy = twigGrowthStrategy
     this.cameraTargetStrategy = cameraTargetStrategy
+    this.pipeline = new GenerationPipeline({
+      mode: this.mode,
+      growthStrategy: this.growthStrategy,
+      leafPlacementStrategy: this.leafPlacementStrategy,
+      twigGrowthStrategy: this.twigGrowthStrategy,
+    })
   }
 
   createSpecimen(input) {
@@ -43,17 +49,17 @@ export class BaseBotanyFactory {
       return { specimen, validation, treeData: null, stats: null, orbitTarget: null }
     }
 
-    const treeData = generateTreeData(specimen.params, {
-      mode: this.mode,
-      growthStrategy: this.growthStrategy,
-      leafPlacementStrategy: this.leafPlacementStrategy,
-      twigGrowthStrategy: this.twigGrowthStrategy,
-    })
-
+    const pipelineResult = this.pipeline.run(specimen)
+    const treeData = pipelineResult.treeData
     const orbitTarget = this.cameraTargetStrategy.getOrbitTarget(specimen.params, treeData)
     return {
       specimen,
       validation,
+      recipe: pipelineResult.recipe,
+      growthContext: pipelineResult.growthContext,
+      structureGraph: pipelineResult.structureGraph,
+      visualFeatures: pipelineResult.visualFeatures,
+      renderArtifacts: pipelineResult.renderArtifacts,
       treeData,
       orbitTarget,
       stats: this.summarize(specimen, treeData),

@@ -13,6 +13,7 @@ dist-ssr
 .next
 out
 .data
+test-results
 *.local
 
 # Editor directories and files
