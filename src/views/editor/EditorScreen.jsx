@@ -42,8 +42,26 @@ export default function EditorScreen() {
       <div className="relative flex flex-1 overflow-hidden px-4 pb-4 pt-3">
         <main className="glass-panel-strong relative flex-1 overflow-hidden rounded-[2rem] border border-white/60">
           <div className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.2),transparent_34%),linear-gradient(180deg,rgba(249,255,250,0.12),rgba(255,255,255,0)_28%)]" />
-          <BotanyViewport specimen={editor.specimen} generated={editor.generated} debugMode={editor.debugMode} />
-          <div className="glass-panel absolute top-6 right-6 z-20 flex gap-1 rounded-[1.2rem] p-1.5">
+          <BotanyViewport
+            specimen={editor.specimen}
+            generated={editor.generated}
+            debugMode={editor.debugMode}
+            frameRequestToken={editor.frameRequestToken}
+            specimenRevision={editor.specimenRevision}
+            generationRevision={editor.generationRevision}
+          />
+          <div className="glass-panel absolute top-6 right-6 z-20 flex items-center gap-1 rounded-[1.2rem] p-1.5">
+            {editor.generationPending ? (
+              <div className="px-3 py-2 text-[9px] font-black uppercase tracking-[0.22em] text-[color:var(--text-muted)]">
+                Updating
+              </div>
+            ) : null}
+            <button
+              onClick={editor.requestFrame}
+              className="glass-button rounded-[0.95rem] px-4 py-2 text-[9px] font-black uppercase tracking-[0.22em]"
+            >
+              Frame
+            </button>
             {['beauty', 'structure', 'bones', 'leaf-density'].map((mode) => (
               <button
                 key={mode}
@@ -81,7 +99,13 @@ export default function EditorScreen() {
               specimen={editor.specimen}
             />
           )}
-          <StatsFooter boneCount={editor.boneCount} status={editor.status} error={editor.error} />
+          <StatsFooter
+            boneCount={editor.boneCount}
+            status={editor.status}
+            error={editor.error}
+            generationPending={editor.generationPending}
+            generationError={editor.generationError}
+          />
         </aside>
       </div>
     </div>

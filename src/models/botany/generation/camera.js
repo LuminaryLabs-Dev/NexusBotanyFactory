@@ -33,3 +33,19 @@ export const getOrbitCameraPose = (params, target = getFallbackOrbitTarget(param
     target: orbitTarget,
   }
 }
+
+export const getAutoOrbitCameraPose = (target, estimatedHeight = 40) => {
+  const orbitTarget = target.clone()
+  const pitchRad = 18 * (Math.PI / 180)
+  const yawRad = 38 * (Math.PI / 180)
+  const distance = Math.max(36, estimatedHeight * 2.2)
+
+  return {
+    position: new THREE.Vector3(
+      orbitTarget.x + distance * Math.cos(pitchRad) * Math.sin(yawRad),
+      orbitTarget.y + distance * Math.sin(pitchRad),
+      orbitTarget.z + distance * Math.cos(pitchRad) * Math.cos(yawRad),
+    ),
+    target: orbitTarget,
+  }
+}

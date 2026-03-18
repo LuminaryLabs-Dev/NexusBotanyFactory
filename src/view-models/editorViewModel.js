@@ -18,9 +18,12 @@ export const useEditorViewModel = () => {
   const [debugMode, setDebugMode] = useState('beauty')
   const [activeTab, setActiveTab] = useState('build')
   const [activeCategories, setActiveCategories] = useState(['phenotype', 'form', 'leaders', 'preview'])
+  const [specimenRevision, setSpecimenRevision] = useState(0)
+  const [frameRequestToken, setFrameRequestToken] = useState(0)
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState(null)
-  const generated = useViewportViewModel(specimen)
+  const viewportState = useViewportViewModel({ ...specimen, revision: specimenRevision })
+  const generated = viewportState.generated
   const validation = validateParams(specimen.params)
 
   const updateParam = (key, value) => {
@@ -57,10 +60,13 @@ export const useEditorViewModel = () => {
       kind: current.kind,
       params: preset,
     }))
+    setSpecimenRevision((current) => current + 1)
+    setFrameRequestToken((current) => current + 1)
   }
 
   const changeKind = (kind) => setSpecimen((current) => ({ ...current, kind }))
   const randomizeSeed = () => updateParam('seed', Math.floor(Math.random() * 2147483647))
+  const requestFrame = () => setFrameRequestToken((current) => current + 1)
   const toggleCategory = (id) => setActiveCategories((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id])
 
   const getLevelSummary = (depth) => {
@@ -95,6 +101,8 @@ export const useEditorViewModel = () => {
     try {
       const payload = await apiClient.getAsset(assetId)
       setSpecimen(payload)
+      setSpecimenRevision((current) => current + 1)
+      setFrameRequestToken((current) => current + 1)
       setStatus('loaded')
     } catch (err) {
       setError(err.message)
@@ -111,8 +119,13 @@ export const useEditorViewModel = () => {
     debugMode,
     activeTab,
     activeCategories,
+    frameRequestToken,
+    specimenRevision,
     generated,
-    boneCount: generated.stats?.boneCount ?? generated.treeData?.skeleton.length ?? 0,
+    generationPending: viewportState.pending,
+    generationError: viewportState.error,
+    generationRevision: viewportState.revision,
+    boneCount: generated?.stats?.boneCount ?? generated?.treeData?.skeleton.length ?? 0,
     validation,
     status,
     error,
@@ -124,6 +137,7 @@ export const useEditorViewModel = () => {
     applyPreset,
     changeKind,
     randomizeSeed,
+    requestFrame,
     getLevelSummary,
     setDebugMode,
     setActiveTab,

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { buildTreeGeometry } from '../../models/botany/generation/geometry.js'
-import { getOrbitCameraPose } from '../../models/botany/generation/camera.js'
+import { getAutoOrbitCameraPose } from '../../models/botany/generation/camera.js'
 import { createBarkMaterial, createLeafMaterial, updateBarkMaterial, updateLeafMaterial } from '../../models/botany/rendering/materialRecipes.js'
 import { buildTerrainResources } from '../../models/botany/rendering/terrain.js'
 
@@ -23,12 +23,13 @@ const createSkyTexture = () => {
   return new THREE.CanvasTexture(canvas)
 }
 
-export default function BotanyViewport({ specimen, generated, debugMode }) {
+export default function BotanyViewport({ specimen, generated, debugMode, frameRequestToken, specimenRevision, generationRevision }) {
   const mountRef = useRef(null)
   const rendererRef = useRef(null)
   const sceneRef = useRef(null)
   const cameraRef = useRef(null)
   const controlsRef = useRef(null)
+  const terrainMeshRef = useRef(null)
   const treeGroupRef = useRef(new THREE.Group())
   const animationRef = useRef()
   const trunkMeshRef = useRef(null)
@@ -39,6 +40,8 @@ export default function BotanyViewport({ specimen, generated, debugMode }) {
   const foliageSignatureRef = useRef(null)
   const skyTextureRef = useRef(null)
   const terrainRecipeRef = useRef(generated?.renderArtifacts?.terrainRecipe)
+  const orbitInitializedRef = useRef(false)
+  const lastFrameRequestRef = useRef(frameRequestToken)
   const [rendererErrorState, setRendererErrorState] = useState(null)
   const auditMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('audit') === '1'
   const fallbackState = useMemo(
@@ -65,8 +68,6 @@ export default function BotanyViewport({ specimen, generated, debugMode }) {
     }
 
     let resizeObserver
-    let terrainGeo
-    let terrainMaterial
     let renderer
 
     try {
@@ -97,10 +98,9 @@ export default function BotanyViewport({ specimen, generated, debugMode }) {
       scene.add(bounceLight)
 
       const terrainResources = buildTerrainResources(terrainRecipeRef.current)
-      terrainGeo = terrainResources.terrainGeo
-      terrainMaterial = terrainResources.terrainMaterial
-      const terrain = new THREE.Mesh(terrainGeo, terrainMaterial)
+      const terrain = new THREE.Mesh(terrainResources.terrainGeo, terrainResources.terrainMaterial)
       terrain.receiveShadow = true
+      terrainMeshRef.current = terrain
       scene.add(terrain)
       scene.add(treeGroupRef.current)
       sceneRef.current = scene
@@ -140,6 +140,8 @@ export default function BotanyViewport({ specimen, generated, debugMode }) {
       resizeObserver?.disconnect()
       cancelAnimationFrame(animationRef.current)
       controlsRef.current?.dispose()
+      terrainMeshRef.current?.geometry?.dispose()
+      terrainMeshRef.current?.material?.dispose()
       trunkMeshRef.current?.geometry?.dispose()
       trunkMeshRef.current?.material?.dispose()
       skeletonRef.current?.geometry?.dispose()
@@ -147,25 +149,41 @@ export default function BotanyViewport({ specimen, generated, debugMode }) {
       leavesRef.current?.material?.dispose()
       leafGeometryRef.current?.dispose()
       skyTextureRef.current?.dispose()
-      terrainGeo?.dispose()
-      terrainMaterial?.dispose()
       renderer?.dispose()
       mountNode.replaceChildren()
     }
-  }, [auditMode, terrainSignature])
+  }, [auditMode])
+
+  useEffect(() => {
+    if (!terrainMeshRef.current || fallbackState) return
+
+    const terrainResources = buildTerrainResources(terrainRecipeRef.current)
+    terrainMeshRef.current.geometry.dispose()
+    terrainMeshRef.current.material.dispose()
+    terrainMeshRef.current.geometry = terrainResources.terrainGeo
+    terrainMeshRef.current.material = terrainResources.terrainMaterial
+  }, [fallbackState, terrainSignature])
 
   useEffect(() => {
     if (!generated?.treeData || !sceneRef.current || !cameraRef.current || !controlsRef.current || fallbackState) return
 
-    const orbitTarget = new THREE.Vector3(
-      generated.stats.orbitTarget.x,
-      generated.stats.orbitTarget.y,
-      generated.stats.orbitTarget.z,
+    const hasMatchingGeneratedRevision = generationRevision === specimenRevision
+    const shouldFrame = !orbitInitializedRef.current || (
+      frameRequestToken !== lastFrameRequestRef.current && hasMatchingGeneratedRevision
     )
-    const { position, target } = getOrbitCameraPose(specimen.params, orbitTarget)
-    cameraRef.current.position.copy(position)
-    controlsRef.current.target.copy(target)
-    controlsRef.current.update()
+    if (shouldFrame) {
+      const orbitTarget = new THREE.Vector3(
+        generated.stats.orbitTarget.x,
+        generated.stats.orbitTarget.y,
+        generated.stats.orbitTarget.z,
+      )
+      const { position, target } = getAutoOrbitCameraPose(orbitTarget, generated.stats.estimatedHeight)
+      cameraRef.current.position.copy(position)
+      controlsRef.current.target.copy(target)
+      controlsRef.current.update()
+      orbitInitializedRef.current = true
+      lastFrameRequestRef.current = frameRequestToken
+    }
 
     const showBones = debugMode === 'bones'
     const showLeafDensity = debugMode === 'leaf-density'
@@ -267,7 +285,7 @@ export default function BotanyViewport({ specimen, generated, debugMode }) {
     } else if (leavesRef.current) {
       leavesRef.current.visible = false
     }
-  }, [debugMode, fallbackState, generated, specimen.params])
+  }, [debugMode, fallbackState, frameRequestToken, generated, generationRevision, specimen.params, specimenRevision])
 
   return (
     <div ref={mountRef} className="relative h-full w-full cursor-crosshair overflow-hidden">

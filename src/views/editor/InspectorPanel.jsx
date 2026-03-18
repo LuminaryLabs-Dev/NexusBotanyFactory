@@ -87,9 +87,9 @@ export default function InspectorPanel({
             <Slider label="Branch Thickness Falloff" value={params.levels[0]?.radiusScale ?? 0.7} min={0.1} max={1} onChange={(value) => updateLevel(0, 'radiusScale', value)} />
           </SectionCard>
           <SectionCard id="preview" title="Preview" helper="Inspect the specimen from different task-oriented view modes." activeCategories={activeCategories} toggleCategory={toggleCategory}>
-            <Slider label="Yaw" value={params.camYaw ?? 45} min={-360} max={360} step={1} onChange={(value) => updateParam('camYaw', value)} />
-            <Slider label="Pitch" value={params.camPitch ?? 15} min={-89} max={89} step={1} onChange={(value) => updateParam('camPitch', value)} />
-            <Slider label="Distance" value={params.camDist ?? 100} min={10} max={400} step={1} onChange={(value) => updateParam('camDist', value)} />
+            <div className="glass-panel rounded-[1rem] px-4 py-3 text-[10px] leading-5 text-[color:var(--text-secondary)]">
+              Orbit the specimen directly in the viewport with your mouse or trackpad. Use the viewport <span className="font-black uppercase tracking-[0.18em] text-[color:var(--text-primary)]">Frame</span> action any time you want to recenter the view.
+            </div>
           </SectionCard>
           <SectionCard id="variation" title="Variation" helper="Introduce controlled natural irregularity and seed-driven variation." activeCategories={activeCategories} toggleCategory={toggleCategory}>
             <Slider label="Seed" value={params.seed} min={0} max={2147483647} step={1} onChange={(value) => updateParam('seed', value)} />
