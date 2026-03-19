@@ -22,7 +22,7 @@ export const useEditorViewModel = () => {
   const [frameRequestToken, setFrameRequestToken] = useState(0)
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState(null)
-  const viewportState = useViewportViewModel({ ...specimen, revision: specimenRevision })
+  const viewportState = useViewportViewModel(specimen, specimenRevision)
   const generated = viewportState.generated
   const validation = validateParams(specimen.params)
 

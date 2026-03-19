@@ -2,30 +2,47 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { generateSpecimen } from '../models/botany/services/specimenGenerationService.js'
 import { deserializeGeneratedPayload } from '../models/botany/serialization/generatedPayload.js'
 
-const createWorkerState = () => {
-  if (typeof window === 'undefined' || typeof Worker === 'undefined') {
-    return 'fallback'
+const getGenerationRuntime = () => {
+  const configuredRuntime = process.env.NEXT_PUBLIC_GENERATION_RUNTIME?.trim().toLowerCase()
+  if (configuredRuntime === 'worker' || configuredRuntime === 'main-thread') {
+    return configuredRuntime
   }
 
-  return 'initializing'
+  return process.env.NODE_ENV === 'production' ? 'main-thread' : 'worker'
 }
 
-const cloneSpecimenInput = (specimen) => ({
+const createExecutionState = () => {
+  if (typeof window === 'undefined') {
+    return 'main-thread'
+  }
+
+  const runtime = getGenerationRuntime()
+  if (runtime === 'worker' && typeof Worker !== 'undefined') {
+    return 'initializing'
+  }
+
+  return 'main-thread'
+}
+
+const cloneSpecimenInput = (specimen, revision) => ({
   id: specimen.id,
   name: specimen.name,
   kind: specimen.kind,
-  revision: specimen.revision ?? 0,
+  revision,
   presetId: specimen.presetId,
   tags: [...(specimen.tags ?? [])],
   params: structuredClone(specimen.params),
 })
 
-export const useViewportViewModel = (specimen) => {
-  const generationInput = useMemo(() => cloneSpecimenInput(specimen), [specimen])
+export const useViewportViewModel = (specimen, revision) => {
+  const generationInput = useMemo(
+    () => cloneSpecimenInput(specimen, revision),
+    [specimen, revision],
+  )
   const deferredInput = useDeferredValue(generationInput)
   const workerRef = useRef(null)
   const requestIdRef = useRef(0)
-  const [workerState, setWorkerState] = useState(createWorkerState)
+  const [executionState, setExecutionState] = useState(createExecutionState)
   const [state, setState] = useState({
     generated: null,
     pending: true,
@@ -34,10 +51,11 @@ export const useViewportViewModel = (specimen) => {
   })
 
   useEffect(() => {
-    if (createWorkerState() !== 'initializing') {
-      setWorkerState('fallback')
+    if (createExecutionState() !== 'initializing') {
+      setExecutionState('main-thread')
       return undefined
     }
+
     try {
       const worker = new Worker(new URL('../workers/specimenGeneration.worker.js', import.meta.url), { type: 'module' })
       workerRef.current = worker
@@ -60,11 +78,11 @@ export const useViewportViewModel = (specimen) => {
       worker.onerror = () => {
         worker.terminate()
         workerRef.current = null
-        setWorkerState('fallback')
+        setExecutionState('main-thread')
       }
-      setWorkerState('worker')
+      setExecutionState('worker')
     } catch {
-      setWorkerState('fallback')
+      setExecutionState('main-thread')
     }
 
     return () => {
@@ -85,13 +103,18 @@ export const useViewportViewModel = (specimen) => {
       error: null,
     }))
 
-    if (workerState === 'worker' && workerRef.current) {
-      workerRef.current.postMessage({ requestId, specimen: deferredInput })
-      return undefined
-    }
+    if (executionState === 'worker' && workerRef.current) {
+      const timeoutId = window.setTimeout(() => {
+        if (requestId !== requestIdRef.current) return
+        workerRef.current?.terminate()
+        workerRef.current = null
+        setExecutionState('main-thread')
+      }, 8000)
 
-    if (workerState !== 'fallback') {
-      return undefined
+      workerRef.current.postMessage({ requestId, specimen: deferredInput })
+      return () => {
+        window.clearTimeout(timeoutId)
+      }
     }
 
     let cancelled = false
@@ -119,7 +142,7 @@ export const useViewportViewModel = (specimen) => {
       cancelled = true
       window.clearTimeout(timeoutId)
     }
-  }, [deferredInput, workerState])
+  }, [deferredInput, executionState])
 
   return state
 }

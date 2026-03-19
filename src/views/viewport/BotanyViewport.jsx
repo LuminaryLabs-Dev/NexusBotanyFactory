@@ -23,6 +23,11 @@ const createSkyTexture = () => {
   return new THREE.CanvasTexture(canvas)
 }
 
+const getBootstrapCameraPose = () => ({
+  position: new THREE.Vector3(120, 82, 148),
+  target: new THREE.Vector3(0, 20, 0),
+})
+
 export default function BotanyViewport({ specimen, generated, debugMode, frameRequestToken, specimenRevision, generationRevision }) {
   const mountRef = useRef(null)
   const rendererRef = useRef(null)
@@ -110,6 +115,10 @@ export default function BotanyViewport({ specimen, generated, debugMode, frameRe
       controls.enableDamping = true
       controls.enablePan = false
       controls.screenSpacePanning = false
+      const bootstrapPose = getBootstrapCameraPose()
+      camera.position.copy(bootstrapPose.position)
+      controls.target.copy(bootstrapPose.target)
+      controls.update()
       cameraRef.current = camera
       controlsRef.current = controls
 
@@ -171,7 +180,7 @@ export default function BotanyViewport({ specimen, generated, debugMode, frameRe
     const shouldFrame = !orbitInitializedRef.current || (
       frameRequestToken !== lastFrameRequestRef.current && hasMatchingGeneratedRevision
     )
-    if (shouldFrame) {
+    if (shouldFrame && generated?.stats?.orbitTarget) {
       const orbitTarget = new THREE.Vector3(
         generated.stats.orbitTarget.x,
         generated.stats.orbitTarget.y,
