@@ -45,6 +45,7 @@ export default function BotanyViewport({ specimen, generated, debugMode, frameRe
   const foliageSignatureRef = useRef(null)
   const skyTextureRef = useRef(null)
   const terrainRecipeRef = useRef(generated?.renderArtifacts?.terrainRecipe)
+  const treePlacementSignatureRef = useRef(null)
   const orbitInitializedRef = useRef(false)
   const lastFrameRequestRef = useRef(frameRequestToken)
   const [rendererErrorState, setRendererErrorState] = useState(null)
@@ -172,6 +173,40 @@ export default function BotanyViewport({ specimen, generated, debugMode, frameRe
     terrainMeshRef.current.geometry = terrainResources.terrainGeo
     terrainMeshRef.current.material = terrainResources.terrainMaterial
   }, [fallbackState, terrainSignature])
+
+  useEffect(() => {
+    if (!generated?.treeData || !terrainMeshRef.current || !treeGroupRef.current || fallbackState) return
+
+    const rootBone = generated.treeData.skeleton?.[0]
+    if (!rootBone?.pos) return
+
+    const placementSignature = [
+      generated.renderArtifacts?.structureSignature ?? 'structure',
+      generated.renderArtifacts?.terrainSignature ?? 'terrain',
+      rootBone.pos.x.toFixed(3),
+      rootBone.pos.y.toFixed(3),
+      rootBone.pos.z.toFixed(3),
+    ].join('|')
+
+    if (treePlacementSignatureRef.current === placementSignature) {
+      return
+    }
+
+    const currentPosition = treeGroupRef.current.position.clone()
+    const rootWorld = rootBone.pos.clone().add(currentPosition)
+    const rayOrigin = new THREE.Vector3(rootWorld.x, rootWorld.y + 600, rootWorld.z)
+    const raycaster = new THREE.Raycaster(rayOrigin, new THREE.Vector3(0, -1, 0))
+    const hits = raycaster.intersectObject(terrainMeshRef.current, false)
+    if (!hits.length) {
+      treePlacementSignatureRef.current = placementSignature
+      return
+    }
+
+    const groundY = hits[0].point.y
+    const offsetY = groundY - rootWorld.y
+    treeGroupRef.current.position.y += offsetY
+    treePlacementSignatureRef.current = placementSignature
+  }, [fallbackState, generated?.treeData, generated?.renderArtifacts?.structureSignature, generated?.renderArtifacts?.terrainSignature])
 
   useEffect(() => {
     if (!generated?.treeData || !sceneRef.current || !cameraRef.current || !controlsRef.current || fallbackState) return

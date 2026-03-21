@@ -1,10 +1,8 @@
-import { BroadleafFactory } from '../factories/BroadleafFactory.js'
-import { BushFactory } from '../factories/BushFactory.js'
-import { ConiferFactory } from '../factories/ConiferFactory.js'
-import { HangingCanopyFactory } from '../factories/HangingCanopyFactory.js'
-import { ShellFoliageFactory } from '../factories/ShellFoliageFactory.js'
+import { CustomSpecimenFactory } from '../factories/CustomSpecimenFactory.js'
+import { getFactoryForSpecimen as getBaseFactoryForSpecimen } from '../factories/factoryRegistry.js'
 
 const getFactoryKey = ({ kind, params }) => {
+  if (kind === 'custom' || params?.customSpecimenId) return 'custom'
   if (kind === 'bush') return 'bush'
   if (params?.leafStyle === 'needle' || params?.name === 'Pine') return 'conifer'
   if (params?.leafStyle === 'hanging') return 'hanging'
@@ -13,13 +11,15 @@ const getFactoryKey = ({ kind, params }) => {
 }
 
 const factories = {
-  broadleaf: new BroadleafFactory(),
-  conifer: new ConiferFactory(),
-  hanging: new HangingCanopyFactory(),
-  shell: new ShellFoliageFactory(),
-  bush: new BushFactory(),
+  custom: new CustomSpecimenFactory(),
 }
 
-export const getFactoryForSpecimen = (specimenLike) => factories[getFactoryKey(specimenLike)] ?? factories.broadleaf
+export const getFactoryForSpecimen = (specimenLike) => {
+  if (getFactoryKey(specimenLike) === 'custom') {
+    return factories.custom
+  }
+
+  return getBaseFactoryForSpecimen(specimenLike)
+}
 
 export const generateSpecimen = (specimenLike) => getFactoryForSpecimen(specimenLike).generate(specimenLike)

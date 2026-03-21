@@ -1,6 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { generateSpecimen } from '../models/botany/services/specimenGenerationService.js'
-import { deserializeGeneratedPayload } from '../models/botany/serialization/generatedPayload.js'
+import { deserializeGeneratedPayload, serializeGeneratedPayload } from '../models/botany/serialization/generatedPayload.js'
 
 const getGenerationRuntime = () => {
   const configuredRuntime = process.env.NEXT_PUBLIC_GENERATION_RUNTIME?.trim().toLowerCase()
@@ -30,9 +30,23 @@ const cloneSpecimenInput = (specimen, revision) => ({
   kind: specimen.kind,
   revision,
   presetId: specimen.presetId,
+  customSpecimenId: specimen.customSpecimenId ?? null,
+  customSpecimenVersion: specimen.customSpecimenVersion ?? null,
+  customSpecimenSnapshot: structuredClone(specimen.customSpecimenSnapshot ?? null),
   tags: [...(specimen.tags ?? [])],
   params: structuredClone(specimen.params),
 })
+
+const getGenerationErrorMessage = (generated) => {
+  if (!generated) return null
+  if (typeof generated.generationError === 'string' && generated.generationError.trim()) {
+    return generated.generationError.trim()
+  }
+  if (generated.validation?.valid === false && Array.isArray(generated.validation.errors) && generated.validation.errors.length > 0) {
+    return generated.validation.errors[0].message ?? 'Specimen generation failed.'
+  }
+  return null
+}
 
 export const useViewportViewModel = (specimen, revision) => {
   const generationInput = useMemo(
@@ -68,17 +82,25 @@ export const useViewportViewModel = (specimen, revision) => {
           return
         }
 
-        setState({
-          generated: deserializeGeneratedPayload(generated),
+        const nextGenerated = generated ? deserializeGeneratedPayload(generated) : null
+        const nextError = getGenerationErrorMessage(nextGenerated)
+        setState((current) => ({
+          ...current,
+          generated: nextError ? current.generated : nextGenerated,
           pending: false,
-          error: null,
-          revision: revision ?? 0,
-        })
+          error: nextError,
+          revision: revision ?? current.revision,
+        }))
       }
       worker.onerror = () => {
         worker.terminate()
         workerRef.current = null
         setExecutionState('main-thread')
+        setState((current) => ({
+          ...current,
+          pending: false,
+          error: current.error ?? 'Generation worker failed. Falling back to main-thread generation.',
+        }))
       }
       setExecutionState('worker')
     } catch {
@@ -109,6 +131,11 @@ export const useViewportViewModel = (specimen, revision) => {
         workerRef.current?.terminate()
         workerRef.current = null
         setExecutionState('main-thread')
+        setState((current) => ({
+          ...current,
+          pending: false,
+          error: current.error ?? 'Generation worker timed out. Falling back to main-thread generation.',
+        }))
       }, 8000)
 
       workerRef.current.postMessage({ requestId, specimen: deferredInput })
@@ -122,12 +149,15 @@ export const useViewportViewModel = (specimen, revision) => {
       try {
         const generated = generateSpecimen(deferredInput)
         if (cancelled || requestId !== requestIdRef.current) return
-        setState({
-          generated,
+        const nextGenerated = generated ? deserializeGeneratedPayload(serializeGeneratedPayload(generated)) : null
+        const nextError = getGenerationErrorMessage(generated)
+        setState((current) => ({
+          ...current,
+          generated: nextError ? current.generated : nextGenerated,
           pending: false,
-          error: null,
-          revision: deferredInput.revision ?? 0,
-        })
+          error: nextError,
+          revision: deferredInput.revision ?? current.revision,
+        }))
       } catch (error) {
         if (cancelled || requestId !== requestIdRef.current) return
         setState((current) => ({

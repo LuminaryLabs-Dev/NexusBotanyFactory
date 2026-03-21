@@ -1,17 +1,38 @@
 'use client'
 
-import { SPECIES_PRESETS } from '../../models/botany/schema/presets.js'
+import { useRef } from 'react'
 
-export default function PresetPicker({ activePresetName, onApplyPreset }) {
+export default function PresetPicker({ presets = [], activePresetKey, onApplyPreset }) {
+  const rowRef = useRef(null)
+
+  const handleWheel = (event) => {
+    const row = rowRef.current
+    if (!row) return
+
+    if (Math.abs(event.deltaX) >= Math.abs(event.deltaY)) return
+
+    event.preventDefault()
+    row.scrollLeft += event.deltaY
+  }
+
   return (
-    <div className="flex flex-wrap gap-1.5 mb-4">
-      {Object.keys(SPECIES_PRESETS).map((name) => (
+    <div
+      ref={rowRef}
+      onWheel={handleWheel}
+      className="greenhouse-horizontal-scrollbar mb-4 flex flex-nowrap gap-2 overflow-x-auto overflow-y-hidden pb-2 pr-2 snap-x snap-mandatory"
+    >
+      {presets.map((preset) => (
         <button
-          key={name}
-          onClick={() => onApplyPreset(name)}
-          className={`glass-chip px-3 py-2 rounded-[0.95rem] text-[9px] font-black uppercase tracking-[0.22em] transition-all ${activePresetName === name ? 'active' : ''}`}
+          key={preset.id}
+          onClick={() => onApplyPreset(preset)}
+          className={`glass-chip snap-start shrink-0 px-4 py-3 rounded-[0.95rem] text-[9px] font-black uppercase tracking-[0.22em] transition-all ${activePresetKey === preset.id ? 'active' : ''}`}
         >
-          {name}
+          <span className="block">{preset.name}</span>
+          {preset.kind === 'custom' ? (
+            <span className="mt-1 block text-[7px] uppercase tracking-[0.28em] text-[color:var(--text-muted)]">
+              {preset.source === 'builtin' ? 'Template' : 'Custom'}
+            </span>
+          ) : null}
         </button>
       ))}
     </div>

@@ -19,8 +19,9 @@ export const getCapabilitiesHandler = async () => json({
     validation: true,
     preview: false,
     export: false,
+    customSpecimens: true,
   },
-  assetKinds: ['tree', 'shrub', 'bush'],
+  assetKinds: ['tree', 'shrub', 'bush', 'custom'],
 })
 
 export const getHealthHandler = async () => json({

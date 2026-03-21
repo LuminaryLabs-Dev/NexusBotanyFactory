@@ -125,6 +125,21 @@ button {
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.62), inset -1px -1px 0 rgba(79, 121, 91, 0.16), 0 12px 26px rgba(96, 165, 113, 0.18);
 }
 
+.greenhouse-horizontal-scrollbar::-webkit-scrollbar {
+  height: 8px;
+}
+
+.greenhouse-horizontal-scrollbar::-webkit-scrollbar-track {
+  background: rgba(219, 235, 223, 0.22);
+  border-radius: 999px;
+}
+
+.greenhouse-horizontal-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, rgba(122, 164, 134, 0.72), rgba(90, 136, 103, 0.8));
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
 .greenhouse-scrollbar::-webkit-scrollbar {
   width: 8px;
 }

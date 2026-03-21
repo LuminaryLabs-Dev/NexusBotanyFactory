@@ -6,12 +6,15 @@ export const getFallbackOrbitTarget = (params) => new THREE.Vector3(
   params.camTargetZ ?? 0,
 )
 
-export const getSpecimenOrbitTarget = (params, treeData) => {
+export const getSpecimenOrbitTarget = (params, treeData, estimatedHeight = null) => {
   if (treeData?.skeleton?.length) {
+    const root = treeData.skeleton[0]?.pos
     const bounds = new THREE.Box3()
     treeData.skeleton.forEach((bone) => bounds.expandByPoint(bone.pos))
-    if (!bounds.isEmpty()) {
-      return bounds.getCenter(new THREE.Vector3())
+    if (root && !bounds.isEmpty()) {
+      const center = bounds.getCenter(new THREE.Vector3())
+      const height = estimatedHeight ?? bounds.getSize(new THREE.Vector3()).y
+      return new THREE.Vector3(center.x, root.y + (height / 2), center.z)
     }
   }
 

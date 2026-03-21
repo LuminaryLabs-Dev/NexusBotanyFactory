@@ -1,0 +1,1 @@
+self.__REACT_LOADABLE_MANIFEST="{\"src/views/editor/EditorScreen.jsx -> ../viewport/BotanyViewport.jsx\":{\"id\":\"src/views/editor/EditorScreen.jsx -> ../viewport/BotanyViewport.jsx\",\"files\":[\"static/chunks/_app-pages-browser_src_views_viewport_BotanyViewport_jsx.js\"]}}"

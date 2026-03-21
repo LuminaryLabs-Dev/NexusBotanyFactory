@@ -42,8 +42,9 @@ export const presetStore = {
         validation: true,
         preview: false,
         export: false,
+        customSpecimens: true,
       },
-      assetKinds: ['tree', 'shrub', 'bush'],
+      assetKinds: ['tree', 'shrub', 'bush', 'custom'],
     }
   },
 }

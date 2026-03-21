@@ -12,10 +12,14 @@ export class BaseSpecimen {
     this.name = input.name ?? 'Untitled Specimen'
     this.kind = normalizeAssetKind(input.kind)
     this.presetId = input.presetId ?? null
+    this.customSpecimenId = input.customSpecimenId ?? null
+    this.customSpecimenVersion = input.customSpecimenVersion ?? null
+    this.customSpecimenSnapshot = input.customSpecimenSnapshot ?? null
     this.tags = normalizeTags(input.tags)
     this.createdAt = input.createdAt ?? null
     this.updatedAt = input.updatedAt ?? null
     this.params = input.params ?? createInitialParams({ presetName: input.presetName, kind: this.kind, paramsPatch: input.paramsPatch })
+    this.extraFieldSchema = input.extraFieldSchema ?? []
   }
 
   normalize() {
@@ -28,7 +32,7 @@ export class BaseSpecimen {
   }
 
   validate() {
-    return validateParams(this.params)
+    return validateParams(this.params, this.extraFieldSchema)
   }
 
   get camera() {
@@ -41,6 +45,9 @@ export class BaseSpecimen {
       name: this.name,
       kind: this.kind,
       presetId: this.presetId,
+      customSpecimenId: this.customSpecimenId,
+      customSpecimenVersion: this.customSpecimenVersion,
+      customSpecimenSnapshot: this.customSpecimenSnapshot,
       tags: this.tags,
       params: this.params,
       createdAt: this.createdAt,

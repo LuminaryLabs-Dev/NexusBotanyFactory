@@ -33,6 +33,9 @@ export const browserProvider = {
       asset,
       stats: generated.stats,
       treeData: generated.treeData,
+      validation: generated.validation ?? null,
+      generationError: generated.generationError ?? null,
+      customSpecimen: generated.customSpecimen ?? null,
     }
   },
 }

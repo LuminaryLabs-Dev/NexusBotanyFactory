@@ -112,6 +112,9 @@ export const getAssetTreeDataHandler = withHandlerErrorBoundary(async (_request,
     asset: assetSummary(asset),
     stats: result.stats,
     treeData: serializeTreeData(result.treeData),
+    validation: result.validation ?? null,
+    generationError: result.generationError ?? null,
+    customSpecimen: result.customSpecimen ?? null,
   })
 })
 

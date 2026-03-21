@@ -53,11 +53,13 @@ const serializeDebugOverlays = (debugOverlays = {}) => ({
 
 export const serializeGeneratedPayload = (generated) => ({
   validation: generated.validation,
+  generationError: generated.generationError ?? null,
+  customSpecimen: generated.customSpecimen ?? null,
   stats: generated.stats,
   renderArtifacts: generated.renderArtifacts
     ? {
-        ...generated.renderArtifacts,
-        debugOverlays: serializeDebugOverlays(generated.renderArtifacts.debugOverlays),
+      ...generated.renderArtifacts,
+      debugOverlays: serializeDebugOverlays(generated.renderArtifacts.debugOverlays),
       }
     : null,
   treeData: generated.treeData

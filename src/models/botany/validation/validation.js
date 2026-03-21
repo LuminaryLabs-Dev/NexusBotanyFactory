@@ -37,6 +37,7 @@ const kindPatches = {
       { branchCount: 11, branchAngle: 1.6, lengthScale: 0.45, radiusScale: 0.62 },
     ],
   },
+  custom: {},
 }
 
 export const normalizePresetName = (value) => {
@@ -58,6 +59,46 @@ export const normalizeAssetKind = (value) => {
 export const normalizeTags = (value) => {
   if (!Array.isArray(value)) return []
   return [...new Set(value.filter((tag) => typeof tag === 'string').map((tag) => tag.trim()).filter(Boolean))]
+}
+
+const normalizeExtraFieldSchema = (extraFieldSchema = []) => {
+  if (Array.isArray(extraFieldSchema)) {
+    return Object.fromEntries(
+      extraFieldSchema
+        .filter((field) => field && typeof field === 'object')
+        .map((field) => {
+          const key = typeof field.path === 'string' && field.path.startsWith('params.')
+            ? field.path.slice('params.'.length)
+            : field.path
+          const typeFromWidget = field.widget === 'toggle'
+            ? 'boolean'
+            : field.widget === 'select'
+              ? 'enum'
+              : field.widget === 'color'
+                ? 'color'
+                : field.widget === 'number'
+                  ? 'number'
+                  : field.widget === 'slider'
+                    ? (field.integer || Number.isInteger(field.step) ? 'integer' : 'number')
+                    : 'string'
+
+          return [key, {
+            ...field,
+            type: field.type ?? typeFromWidget,
+            values: Array.isArray(field.options)
+              ? field.options.map((option) => (typeof option === 'string' ? option : option.value ?? option.label)).filter((value) => value !== undefined)
+              : field.values,
+          }]
+        })
+        .filter(([key]) => typeof key === 'string' && key.length > 0),
+    )
+  }
+
+  if (extraFieldSchema && typeof extraFieldSchema === 'object') {
+    return extraFieldSchema
+  }
+
+  return {}
 }
 
 const getDefaultCameraTarget = (params) => ({
@@ -172,8 +213,9 @@ export const validateLevelPatch = (patch, pathPrefix = 'levels[]') => {
   return { valid: errors.length === 0, errors }
 }
 
-export const validateParams = (params) => {
+export const validateParams = (params, extraFieldSchema = []) => {
   const errors = []
+  const allowedExtraFields = normalizeExtraFieldSchema(extraFieldSchema)
 
   if (!params || typeof params !== 'object' || Array.isArray(params)) {
     pushValidationError(errors, 'params', 'Expected an object.', params)
@@ -183,10 +225,44 @@ export const validateParams = (params) => {
   const normalizedParams = normalizeCameraParams(params)
 
   Object.keys(normalizedParams).forEach((key) => {
-    if (!(key in BOTANY_PARAM_FIELD_SCHEMA)) {
+    if (!(key in BOTANY_PARAM_FIELD_SCHEMA) && !(key in allowedExtraFields)) {
       pushValidationError(errors, `params.${key}`, 'Unknown field.', normalizedParams[key])
     }
   })
+
+  const validateField = (key, schema, value, pathPrefix = 'params') => {
+    if (schema.type === 'integer' || schema.type === 'number') {
+      validateNumberField(errors, `${pathPrefix}.${key}`, value, schema, { integer: schema.type === 'integer' })
+      return
+    }
+
+    if (schema.type === 'enum') {
+      if (!Array.isArray(schema.values) || !schema.values.includes(value)) {
+        pushValidationError(errors, `${pathPrefix}.${key}`, `Expected one of: ${schema.values.join(', ')}.`, value)
+      }
+      return
+    }
+
+    if (schema.type === 'color') {
+      if (typeof value !== 'string' || !colorPattern.test(value)) {
+        pushValidationError(errors, `${pathPrefix}.${key}`, 'Expected a hex color string like #336699.', value)
+      }
+      return
+    }
+
+    if (schema.type === 'boolean') {
+      if (typeof value !== 'boolean') {
+        pushValidationError(errors, `${pathPrefix}.${key}`, 'Expected a boolean value.', value)
+      }
+      return
+    }
+
+    if (schema.type === 'string') {
+      if (typeof value !== 'string') {
+        pushValidationError(errors, `${pathPrefix}.${key}`, 'Expected a string value.', value)
+      }
+    }
+  }
 
   Object.entries(BOTANY_PARAM_FIELD_SCHEMA).forEach(([key, schema]) => {
     const value = normalizedParams[key]
@@ -196,24 +272,7 @@ export const validateParams = (params) => {
       return
     }
 
-    if (schema.type === 'integer' || schema.type === 'number') {
-      validateNumberField(errors, `params.${key}`, value, schema, { integer: schema.type === 'integer' })
-      return
-    }
-
-    if (schema.type === 'enum') {
-      if (!schema.values.includes(value)) {
-        pushValidationError(errors, `params.${key}`, `Expected one of: ${schema.values.join(', ')}.`, value)
-      }
-      return
-    }
-
-    if (schema.type === 'color') {
-      if (typeof value !== 'string' || !colorPattern.test(value)) {
-        pushValidationError(errors, `params.${key}`, 'Expected a hex color string like #336699.', value)
-      }
-      return
-    }
+    validateField(key, schema, value)
 
     if (key === 'levels') {
       if (!Array.isArray(value)) {
@@ -230,6 +289,17 @@ export const validateParams = (params) => {
         result.errors.forEach((error) => errors.push(error))
       })
     }
+  })
+
+  Object.entries(allowedExtraFields).forEach(([key, schema]) => {
+    const value = normalizedParams[key]
+    if (value === undefined) {
+      if (schema.required) {
+        pushValidationError(errors, `params.${key}`, 'Missing required field.', value)
+      }
+      return
+    }
+    validateField(key, schema, value)
   })
 
   if (!LEAF_STYLE_ENUM.includes(normalizedParams.leafStyle)) {

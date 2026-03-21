@@ -1,7 +1,7 @@
 import { clonePresetParams, SPECIES_PRESETS } from './presets.js'
 
 export const DEFAULT_PRESET_NAME = 'Pine'
-export const SUPPORTED_ASSET_KINDS = ['tree', 'shrub', 'bush']
+export const SUPPORTED_ASSET_KINDS = ['tree', 'shrub', 'bush', 'custom']
 export const LEAF_STYLE_ENUM = ['needle', 'broadleaf', 'hanging', 'shell']
 export const LEAF_ARRANGEMENT_ENUM = ['terminal', 'alternate', 'opposite']
 export const ORBIT_MODE_ENUM = ['specimen-locked']
@@ -98,12 +98,17 @@ const makePresetSummary = ([name, params]) => ({
 export const createDefaultParams = (presetName = DEFAULT_PRESET_NAME) => clonePresetParams(presetName)
 
 export const createSchemaDocument = () => ({
-  version: 3,
+  version: 4,
   defaultPresetName: DEFAULT_PRESET_NAME,
   supportedAssetKinds: SUPPORTED_ASSET_KINDS,
   presets: Object.entries(SPECIES_PRESETS).map(makePresetSummary),
   topLevelFields: BOTANY_PARAM_FIELD_SCHEMA,
   levelFields: BOTANY_LEVEL_FIELD_SCHEMA,
+  customSpecimens: {
+    supported: true,
+    inspectorMetadata: true,
+    generatorSource: true,
+  },
   examples: {
     createAsset: {
       name: 'Oak Study 01',

@@ -51,7 +51,7 @@ export class BaseBotanyFactory {
 
     const pipelineResult = this.pipeline.run(specimen)
     const treeData = pipelineResult.treeData
-    const orbitTarget = this.cameraTargetStrategy.getOrbitTarget(specimen.params, treeData)
+    const orbitTarget = this.cameraTargetStrategy.getOrbitTarget(specimen.params, treeData, pipelineResult.stats?.estimatedHeight ?? null)
     return {
       specimen,
       validation,
@@ -68,7 +68,7 @@ export class BaseBotanyFactory {
 
   summarize(specimen, treeData) {
     const tipHeight = treeData.skeleton.reduce((maxHeight, bone) => Math.max(maxHeight, bone.pos.y), 0)
-    const orbitTarget = getSpecimenOrbitTarget(specimen.params, treeData)
+    const orbitTarget = getSpecimenOrbitTarget(specimen.params, treeData, tipHeight)
     return {
       presetName: specimen.params.name,
       recursion: specimen.params.recursion,
