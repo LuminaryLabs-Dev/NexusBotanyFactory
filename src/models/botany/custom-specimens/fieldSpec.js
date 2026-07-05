@@ -1,4 +1,6 @@
 const DEFAULT_VISIBILITY = ['build', 'refine', 'editor']
+const DEFAULT_INTENT = 'technical'
+const DEFAULT_PRIORITY = 'advanced'
 
 export const FIELD_WIDGETS = ['slider', 'select', 'toggle', 'color', 'text', 'textarea', 'number', 'code']
 
@@ -22,13 +24,17 @@ export const inferWidgetType = (field) => {
 
 export const normalizeFieldSpec = (field, index = 0) => {
   const widget = inferWidgetType(field)
+  const workspaceVisibility = normalizeVisibleIn(field.workspaceVisibility ?? field.visibleIn)
   return {
     path: field.path ?? '',
     label: field.label ?? field.path?.split('.').at(-1) ?? 'Field',
     widget,
     group: field.group ?? 'Advanced',
     order: field.order ?? index * 10,
-    visibleIn: normalizeVisibleIn(field.visibleIn),
+    visibleIn: workspaceVisibility,
+    workspaceVisibility,
+    intent: field.intent ?? DEFAULT_INTENT,
+    priority: field.priority ?? DEFAULT_PRIORITY,
     advanced: Boolean(field.advanced),
     readOnly: Boolean(field.readOnly),
     hidden: Boolean(field.hidden),
@@ -65,6 +71,5 @@ export const groupFieldSpecs = (fields = []) => {
 
 export const isFieldVisibleIn = (field, activeTab) => {
   if (!field || field.hidden) return false
-  return normalizeVisibleIn(field.visibleIn).includes(String(activeTab ?? '').toLowerCase())
+  return normalizeVisibleIn(field.workspaceVisibility ?? field.visibleIn).includes(String(activeTab ?? '').toLowerCase())
 }
-

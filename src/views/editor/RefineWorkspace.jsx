@@ -1,9 +1,9 @@
 'use client'
 
 import LevelControls from './LevelControls.jsx'
-import { InspectorFieldGroupList, InspectorSectionCard } from './FieldControls.jsx'
-import { getRefineInspectorFields, getCustomInspectorFields } from '../../models/botany/ui/inspectorCatalog.js'
+import { InspectorFieldList, InspectorSectionCard } from './FieldControls.jsx'
 import { getIn } from '../../lib/objectPaths.js'
+import { getRefineWorkspaceSections, getWorkspaceSpec } from '../../models/botany/ui/workspaceSpecs.js'
 
 export default function RefineWorkspace({
   specimen,
@@ -13,7 +13,10 @@ export default function RefineWorkspace({
   getLevelSummary,
   customDefinition,
 }) {
-  const refineFields = [...getRefineInspectorFields(), ...getCustomInspectorFields(customDefinition)]
+  const workspace = getWorkspaceSpec('refine')
+  const sections = getRefineWorkspaceSections(customDefinition)
+  const branchLayerSection = sections.find((section) => section.id === 'branchLayers')
+  const fieldSections = sections.filter((section) => section.id !== 'branchLayers' && workspace?.sectionOrder?.includes(section.id))
 
   return (
     <div className="greenhouse-scrollbar flex-1 overflow-y-auto p-4 space-y-4 min-h-0 text-[color:var(--text-secondary)]">
@@ -27,23 +30,40 @@ export default function RefineWorkspace({
         </div>
       </InspectorSectionCard>
 
-      <InspectorFieldGroupList
-        fields={refineFields}
-        activeTab="refine"
-        valueGetter={(path) => getIn(specimen, path)}
-        onChange={updatePath}
-      />
+      {fieldSections.map((section) => (
+        section.fields?.length ? (
+          <InspectorSectionCard
+            key={section.id}
+            title={section.title}
+            helper={section.helper}
+            emphasis={section.priority === 'primary'}
+          >
+            <div className="space-y-3">
+              <InspectorFieldList
+                fields={section.fields}
+                activeTab="refine"
+                valueGetter={(path) => getIn(specimen, path)}
+                onChange={updatePath}
+              />
+            </div>
+          </InspectorSectionCard>
+        ) : null
+      ))}
 
-      <div className="space-y-3">
-        <div className="px-1 text-[10px] font-black uppercase tracking-[0.26em] text-[color:var(--text-muted)]">Branch Layers</div>
-        <LevelControls
-          params={specimen.params}
-          activeCategories={activeCategories}
-          toggleCategory={toggleCategory}
-          updatePath={updatePath}
-          getLevelSummary={getLevelSummary}
-        />
-      </div>
+      <InspectorSectionCard
+        title={branchLayerSection?.title ?? 'Branch Layers'}
+        helper={branchLayerSection?.helper ?? 'Primary and downstream branch tiers are tuned per layer below.'}
+      >
+        <div className="space-y-3">
+          <LevelControls
+            params={specimen.params}
+            activeCategories={activeCategories}
+            toggleCategory={toggleCategory}
+            updatePath={updatePath}
+            getLevelSummary={getLevelSummary}
+          />
+        </div>
+      </InspectorSectionCard>
     </div>
   )
 }

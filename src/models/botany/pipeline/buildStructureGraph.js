@@ -1,6 +1,6 @@
 import { generateTreeData } from '../generation/tree-data.js'
 
-const buildAxisGraph = (treeData) => treeData.nodes.map((node, index) => ({
+export const buildAxisGraph = (treeData) => treeData.nodes.map((node, index) => ({
   id: `axis:${index}`,
   depth: node.depth,
   parentIdx: node.parentIdx,
@@ -9,7 +9,7 @@ const buildAxisGraph = (treeData) => treeData.nodes.map((node, index) => ({
   leaderClass: node.leaderClass ?? null,
 }))
 
-const buildSegmentGraph = (treeData) => treeData.skeleton.map((bone) => ({
+export const buildSegmentGraph = (treeData) => treeData.skeleton.map((bone) => ({
   id: bone.id,
   parentId: bone.parentId,
   depth: bone.depth,
@@ -22,12 +22,12 @@ const buildSegmentGraph = (treeData) => treeData.skeleton.map((bone) => ({
   dir: bone.dir,
 }))
 
-const buildFoliageAnchorSet = (treeData) => {
+export const buildFoliageAnchorSet = (treeData) => {
   const anchorIds = new Set(treeData.leafInstances.map((leaf) => leaf.boneId))
   return Array.from(anchorIds).map((boneId) => ({ boneId }))
 }
 
-const createStructureSignature = (recipe, treeData) => JSON.stringify({
+export const createStructureSignature = (recipe, treeData, suffix = '') => JSON.stringify({
   presetName: recipe.presetName,
   kind: recipe.kind,
   seed: recipe.params.seed,
@@ -42,6 +42,15 @@ const createStructureSignature = (recipe, treeData) => JSON.stringify({
   })),
   skeletonCount: treeData.skeleton.length,
   nodeCount: treeData.nodes.length,
+  suffix,
+})
+
+export const buildStructureGraphFromTreeData = (recipe, treeData, signatureSuffix = '') => ({
+  treeData,
+  axisGraph: buildAxisGraph(treeData),
+  segmentGraph: buildSegmentGraph(treeData),
+  foliageAnchorSet: buildFoliageAnchorSet(treeData),
+  structureSignature: createStructureSignature(recipe, treeData, signatureSuffix),
 })
 
 export const buildStructureGraph = ({ recipe, growthStrategy, leafPlacementStrategy, twigGrowthStrategy }) => {
@@ -52,11 +61,5 @@ export const buildStructureGraph = ({ recipe, growthStrategy, leafPlacementStrat
     twigGrowthStrategy,
   })
 
-  return {
-    treeData,
-    axisGraph: buildAxisGraph(treeData),
-    segmentGraph: buildSegmentGraph(treeData),
-    foliageAnchorSet: buildFoliageAnchorSet(treeData),
-    structureSignature: createStructureSignature(recipe, treeData),
-  }
+  return buildStructureGraphFromTreeData(recipe, treeData)
 }

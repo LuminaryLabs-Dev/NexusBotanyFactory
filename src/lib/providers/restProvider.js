@@ -1,6 +1,6 @@
 const defaultApiBaseUrl = 'http://localhost:3002/api'
 
-const getApiBaseUrl = () => process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '') ?? defaultApiBaseUrl
+const getApiBaseUrl = () => import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? defaultApiBaseUrl
 
 const createUrl = (path) => `${getApiBaseUrl()}${path}`
 

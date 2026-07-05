@@ -56,6 +56,8 @@ export const serializeGeneratedPayload = (generated) => ({
   generationError: generated.generationError ?? null,
   customSpecimen: generated.customSpecimen ?? null,
   stats: generated.stats,
+  simulation: generated.simulation ?? null,
+  treeAsset: generated.treeAsset ?? null,
   renderArtifacts: generated.renderArtifacts
     ? {
       ...generated.renderArtifacts,
@@ -67,17 +69,23 @@ export const serializeGeneratedPayload = (generated) => ({
         nodes: generated.treeData.nodes.map(serializeNode),
         skeleton: generated.treeData.skeleton.map(serializeBone),
         leafInstances: generated.treeData.leafInstances.map(serializeLeafInstance),
+        rootAnchor: generated.treeData.rootAnchor ? vectorToPlain(generated.treeData.rootAnchor) : null,
+        rootRadius: generated.treeData.rootRadius ?? null,
       }
     : null,
 })
 
 export const deserializeGeneratedPayload = (payload) => ({
   ...payload,
+  simulation: payload.simulation ?? null,
+  treeAsset: payload.treeAsset ?? null,
   treeData: payload.treeData
     ? {
         nodes: payload.treeData.nodes.map(deserializeNode),
         skeleton: payload.treeData.skeleton.map(deserializeBone),
         leafInstances: payload.treeData.leafInstances.map(deserializeLeafInstance),
+        rootAnchor: payload.treeData.rootAnchor ? plainToVector(payload.treeData.rootAnchor) : null,
+        rootRadius: payload.treeData.rootRadius ?? null,
       }
     : null,
 })

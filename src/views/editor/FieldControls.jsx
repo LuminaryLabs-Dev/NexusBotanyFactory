@@ -148,6 +148,20 @@ export function InspectorField({ field, value, onChange, disabled = false }) {
   }
 }
 
+export function InspectorFieldList({ fields, activeTab, valueGetter, onChange, disabled = false }) {
+  return fields
+    .filter((field) => isFieldVisibleIn(field, activeTab))
+    .map((field) => (
+      <InspectorField
+        key={field.path}
+        field={field}
+        value={valueGetter(field.path)}
+        onChange={(nextValue) => onChange(field.path, nextValue)}
+        disabled={disabled || field.readOnly}
+      />
+    ))
+}
+
 export function InspectorFieldGroupList({ fields, activeTab, valueGetter, onChange, disabled = false }) {
   const groups = groupFieldSpecs(fields).filter((group) => group.fields.some((field) => isFieldVisibleIn(field, activeTab)))
 
@@ -158,17 +172,13 @@ export function InspectorFieldGroupList({ fields, activeTab, valueGetter, onChan
           <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[color:var(--text-muted)]">{group.title}</div>
           {group.helper ? <div className="text-[9px] leading-4 text-[color:var(--text-muted)]">{group.helper}</div> : null}
           <div className="space-y-3">
-            {group.fields
-              .filter((field) => isFieldVisibleIn(field, activeTab))
-              .map((field) => (
-                <InspectorField
-                  key={field.path}
-                  field={field}
-                  value={valueGetter(field.path)}
-                  onChange={(nextValue) => onChange(field.path, nextValue)}
-                  disabled={disabled || field.readOnly}
-                />
-              ))}
+            <InspectorFieldList
+              fields={group.fields}
+              activeTab={activeTab}
+              valueGetter={valueGetter}
+              onChange={onChange}
+              disabled={disabled}
+            />
           </div>
         </div>
       ))}

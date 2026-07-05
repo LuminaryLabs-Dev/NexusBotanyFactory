@@ -1,6 +1,14 @@
 'use client'
 
-export default function StatsFooter({ boneCount, status, error, generationPending, generationError }) {
+export default function StatsFooter({
+  boneCount,
+  status,
+  error,
+  generationPending,
+  generationError,
+  previewLodLevel = 0,
+  simulation = null,
+}) {
   const footerLabel = error
     ? `Error: ${error}`
     : generationError
@@ -9,10 +17,14 @@ export default function StatsFooter({ boneCount, status, error, generationPendin
         ? 'Status: updating'
         : `Status: ${status}`
 
+  const timelineLabel = simulation
+    ? `Year ${simulation.currentYear}/${simulation.years} · Tick ${simulation.currentTickInYear}/${simulation.ticksPerYear}`
+    : `LOD${previewLodLevel} · Bones: ${boneCount}`
+
   return (
     <div className="flex items-center justify-between border-t border-white/30 bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(210,228,214,0.08))] px-4 py-4 text-[8px] font-black uppercase tracking-[0.26em] text-[color:var(--text-muted)]">
       <span className="max-w-[70%] truncate">{footerLabel}</span>
-      <span className="tabular-nums">Bones: {boneCount}</span>
+      <span className="tabular-nums">{timelineLabel}</span>
     </div>
   )
 }

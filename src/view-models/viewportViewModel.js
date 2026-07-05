@@ -2,13 +2,21 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { generateSpecimen } from '../models/botany/services/specimenGenerationService.js'
 import { deserializeGeneratedPayload, serializeGeneratedPayload } from '../models/botany/serialization/generatedPayload.js'
 
+const readClientEnv = (key) => {
+  if (typeof import.meta === 'undefined' || !import.meta.env) {
+    return undefined
+  }
+
+  return import.meta.env[key]
+}
+
 const getGenerationRuntime = () => {
-  const configuredRuntime = process.env.NEXT_PUBLIC_GENERATION_RUNTIME?.trim().toLowerCase()
+  const configuredRuntime = readClientEnv('VITE_GENERATION_RUNTIME')?.trim().toLowerCase()
   if (configuredRuntime === 'worker' || configuredRuntime === 'main-thread') {
     return configuredRuntime
   }
 
-  return process.env.NODE_ENV === 'production' ? 'main-thread' : 'worker'
+  return import.meta.env.PROD ? 'main-thread' : 'worker'
 }
 
 const createExecutionState = () => {

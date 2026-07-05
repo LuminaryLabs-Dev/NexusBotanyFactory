@@ -3,27 +3,29 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
-  --bg-forest: #c9d9c8;
-  --bg-mist: #edf6ee;
-  --bg-depth: #9cb7a1;
-  --panel-glass: rgba(232, 244, 234, 0.52);
-  --panel-glass-strong: rgba(214, 233, 219, 0.72);
-  --panel-glass-dark: rgba(97, 131, 108, 0.22);
-  --edge-highlight: rgba(255, 255, 255, 0.72);
-  --edge-shadow: rgba(57, 86, 66, 0.18);
-  --accent-sage: #7aa486;
-  --accent-moss: #4f7d57;
-  --accent-mint: #c4f4d4;
-  --accent-glow: rgba(141, 223, 169, 0.42);
-  --text-primary: #163222;
-  --text-secondary: #335342;
-  --text-muted: #5f7a69;
-  --text-inverse: #f4fff6;
-  --shadow-soft: 0 18px 50px rgba(51, 81, 59, 0.16);
-  --shadow-bevel: inset 1px 1px 0 rgba(255, 255, 255, 0.55), inset -1px -1px 0 rgba(73, 101, 83, 0.16);
-  --glow-soft: 0 0 0 1px rgba(255, 255, 255, 0.18), 0 0 28px rgba(151, 228, 176, 0.16);
-  --glow-focus: 0 0 0 1px rgba(194, 255, 211, 0.52), 0 0 34px rgba(137, 222, 167, 0.26);
+  color-scheme: light;
+  --bg-forest: #4d8f54;
+  --bg-mist: #a8d5a1;
+  --bg-depth: #2f6b38;
+  --panel-glass: rgba(213, 241, 205, 0.58);
+  --panel-glass-strong: rgba(228, 247, 222, 0.76);
+  --panel-glass-dark: rgba(24, 61, 30, 0.2);
+  --edge-highlight: rgba(245, 255, 241, 0.72);
+  --edge-shadow: rgba(20, 52, 25, 0.22);
+  --accent-sage: #7fc879;
+  --accent-moss: #2d6f37;
+  --accent-mint: #dff8d8;
+  --accent-glow: rgba(85, 154, 92, 0.26);
+  --border-plant: rgba(28, 79, 35, 0.42);
+  --border-plant-strong: rgba(22, 66, 29, 0.58);
+  --text-primary: #163117;
+  --text-secondary: #29472a;
+  --text-muted: #4f7050;
+  --text-inverse: #effbea;
+  --shadow-soft: 0 20px 52px rgba(22, 57, 27, 0.18);
+  --shadow-bevel: inset 1px 1px 0 rgba(255, 255, 255, 0.44), inset -1px -1px 0 rgba(28, 72, 34, 0.16);
+  --glow-soft: 0 0 0 1px rgba(245, 255, 241, 0.14), 0 0 28px rgba(73, 131, 80, 0.12);
+  --glow-focus: 0 0 0 1px rgba(228, 255, 220, 0.46), 0 0 34px rgba(78, 151, 88, 0.18);
 }
 
 * {
@@ -41,9 +43,10 @@ body {
   color: var(--text-primary);
   font-family: 'Avenir Next', 'Segoe UI', sans-serif;
   background:
-    radial-gradient(circle at top left, rgba(233, 248, 236, 0.96), transparent 28%),
-    radial-gradient(circle at top right, rgba(194, 232, 205, 0.86), transparent 22%),
-    linear-gradient(180deg, var(--bg-mist) 0%, #d9e6d7 36%, #c6d6c4 100%);
+    radial-gradient(circle at 12% 14%, rgba(209, 247, 201, 0.34), transparent 24%),
+    radial-gradient(circle at 82% 18%, rgba(23, 72, 29, 0.2), transparent 24%),
+    radial-gradient(circle at 50% 100%, rgba(12, 47, 20, 0.26), transparent 34%),
+    linear-gradient(180deg, #7ac06d 0%, #4f9a57 34%, #2a6b36 100%);
 }
 
 button,
@@ -58,44 +61,82 @@ button {
 
 .greenhouse-shell {
   background:
-    radial-gradient(circle at top left, rgba(241, 253, 243, 0.95), transparent 26%),
-    radial-gradient(circle at 65% 0%, rgba(180, 228, 191, 0.58), transparent 32%),
-    linear-gradient(180deg, rgba(245, 251, 246, 0.9) 0%, rgba(219, 234, 222, 0.94) 48%, rgba(195, 211, 198, 0.94) 100%);
+    radial-gradient(circle at 10% 4%, rgba(224, 252, 217, 0.24), transparent 20%),
+    radial-gradient(circle at 80% 0%, rgba(17, 63, 25, 0.18), transparent 22%),
+    linear-gradient(180deg, rgba(146, 209, 129, 0.32) 0%, rgba(84, 153, 78, 0.18) 100%);
 }
 
 .glass-panel {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.46), rgba(212, 232, 216, 0.22)),
+    linear-gradient(145deg, rgba(248, 255, 243, 0.54), rgba(198, 236, 193, 0.28)),
     var(--panel-glass);
-  border: 1px solid rgba(255, 255, 255, 0.52);
+  border: 1px solid var(--border-plant);
   box-shadow: var(--shadow-soft), var(--shadow-bevel), var(--glow-soft);
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
+  position: relative;
+  overflow: hidden;
 }
 
 .glass-panel-strong {
   background:
-    linear-gradient(155deg, rgba(255, 255, 255, 0.64), rgba(203, 229, 209, 0.26)),
+    linear-gradient(155deg, rgba(250, 255, 247, 0.7), rgba(203, 239, 196, 0.32)),
     var(--panel-glass-strong);
-  border: 1px solid rgba(255, 255, 255, 0.74);
+  border: 1px solid var(--border-plant-strong);
   box-shadow: var(--shadow-soft), var(--shadow-bevel), var(--glow-focus);
   backdrop-filter: blur(22px) saturate(145%);
   -webkit-backdrop-filter: blur(22px) saturate(145%);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-panel::before,
+.glass-panel-strong::before,
+.glass-panel::after,
+.glass-panel-strong::after {
+  content: '';
+  position: absolute;
+  inset: -25%;
+  pointer-events: none;
+  opacity: 0.58;
+}
+
+.glass-panel::before,
+.glass-panel-strong::before {
+  background:
+    linear-gradient(115deg, transparent 28%, rgba(20, 58, 25, 0.06) 40%, rgba(11, 33, 15, 0.18) 49%, rgba(214, 255, 211, 0.1) 58%, transparent 70%);
+  transform: translate3d(-36%, -8%, 0) rotate(8deg);
+  animation: greenhouse-dark-reflection 18s linear infinite;
+}
+
+.glass-panel::after,
+.glass-panel-strong::after {
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.16), transparent 16%),
+    linear-gradient(132deg, transparent 32%, rgba(24, 63, 29, 0.07) 43%, rgba(10, 27, 13, 0.16) 52%, transparent 66%);
+  transform: translate3d(30%, 12%, 0) rotate(-10deg);
+  animation: greenhouse-dark-reflection-alt 22s ease-in-out infinite;
+}
+
+.glass-panel > *,
+.glass-panel-strong > * {
+  position: relative;
+  z-index: 1;
 }
 
 .glass-button {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(213, 233, 218, 0.22)),
-    rgba(220, 239, 225, 0.42);
-  border: 1px solid rgba(255, 255, 255, 0.62);
+    linear-gradient(180deg, rgba(249, 255, 246, 0.62), rgba(210, 240, 204, 0.28)),
+    rgba(220, 244, 214, 0.5);
+  border: 1px solid var(--border-plant);
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.56), inset -1px -1px 0 rgba(70, 106, 82, 0.14), 0 10px 22px rgba(79, 111, 89, 0.1);
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 .glass-button:hover {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(221, 245, 228, 0.28)),
-    rgba(228, 246, 232, 0.58);
+    linear-gradient(180deg, rgba(252, 255, 250, 0.84), rgba(219, 247, 213, 0.34)),
+    rgba(230, 249, 225, 0.66);
   color: var(--text-primary);
 }
 
@@ -109,10 +150,10 @@ button {
 
 .glass-chip {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.44), rgba(214, 234, 220, 0.1)),
-    rgba(228, 241, 231, 0.24);
-  border: 1px solid rgba(255, 255, 255, 0.48);
-  color: var(--text-muted);
+    linear-gradient(180deg, rgba(250, 255, 247, 0.48), rgba(214, 240, 211, 0.14)),
+    rgba(229, 246, 225, 0.28);
+  border: 1px solid var(--border-plant);
+  color: var(--text-secondary);
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.5), inset -1px -1px 0 rgba(70, 106, 82, 0.12);
 }
 
@@ -120,7 +161,7 @@ button {
   background:
     linear-gradient(180deg, rgba(221, 248, 228, 0.9), rgba(139, 201, 154, 0.44)),
     rgba(188, 229, 198, 0.75);
-  border-color: rgba(255, 255, 255, 0.76);
+  border-color: var(--border-plant-strong);
   color: #123320;
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.62), inset -1px -1px 0 rgba(79, 121, 91, 0.16), 0 12px 26px rgba(96, 165, 113, 0.18);
 }
@@ -137,7 +178,7 @@ button {
 .greenhouse-horizontal-scrollbar::-webkit-scrollbar-thumb {
   background: linear-gradient(90deg, rgba(122, 164, 134, 0.72), rgba(90, 136, 103, 0.8));
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(28, 79, 35, 0.32);
 }
 
 .greenhouse-scrollbar::-webkit-scrollbar {
@@ -152,5 +193,29 @@ button {
 .greenhouse-scrollbar::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, rgba(122, 164, 134, 0.72), rgba(90, 136, 103, 0.8));
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(28, 79, 35, 0.32);
+}
+
+@keyframes greenhouse-dark-reflection {
+  0% {
+    transform: translate3d(-40%, -10%, 0) rotate(8deg);
+  }
+  50% {
+    transform: translate3d(8%, 2%, 0) rotate(5deg);
+  }
+  100% {
+    transform: translate3d(34%, 10%, 0) rotate(8deg);
+  }
+}
+
+@keyframes greenhouse-dark-reflection-alt {
+  0% {
+    transform: translate3d(28%, 12%, 0) rotate(-10deg);
+  }
+  50% {
+    transform: translate3d(-8%, -4%, 0) rotate(-6deg);
+  }
+  100% {
+    transform: translate3d(-34%, -14%, 0) rotate(-10deg);
+  }
 }

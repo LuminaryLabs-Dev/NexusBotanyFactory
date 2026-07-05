@@ -2,23 +2,33 @@ import * as THREE from 'three'
 
 export const getFallbackOrbitTarget = (params) => new THREE.Vector3(
   params.camTargetX ?? 0,
-  params.camTargetY ?? (1.25 + (params.height / 2)),
+  params.camTargetY ?? (params.height / 2),
   params.camTargetZ ?? 0,
 )
 
 export const getSpecimenOrbitTarget = (params, treeData, estimatedHeight = null) => {
   if (treeData?.skeleton?.length) {
-    const root = treeData.skeleton[0]?.pos
+    const root = treeData.rootAnchor ?? treeData.skeleton[0]?.pos
     const bounds = new THREE.Box3()
     treeData.skeleton.forEach((bone) => bounds.expandByPoint(bone.pos))
+    if (treeData.rootAnchor) {
+      bounds.expandByPoint(treeData.rootAnchor)
+    }
     if (root && !bounds.isEmpty()) {
-      const center = bounds.getCenter(new THREE.Vector3())
       const height = estimatedHeight ?? bounds.getSize(new THREE.Vector3()).y
-      return new THREE.Vector3(center.x, root.y + (height / 2), center.z)
+      return new THREE.Vector3(root.x, root.y + (height / 2), root.z)
     }
   }
 
   return getFallbackOrbitTarget(params)
+}
+
+export const getLandedOrbitTarget = (landedAnchor, estimatedHeight = 40) => {
+  const anchor = landedAnchor instanceof THREE.Vector3
+    ? landedAnchor.clone()
+    : new THREE.Vector3(landedAnchor?.x ?? 0, landedAnchor?.y ?? 0, landedAnchor?.z ?? 0)
+
+  return new THREE.Vector3(anchor.x, anchor.y + (estimatedHeight / 2), anchor.z)
 }
 
 export const getOrbitCameraPose = (params, target = getFallbackOrbitTarget(params)) => {

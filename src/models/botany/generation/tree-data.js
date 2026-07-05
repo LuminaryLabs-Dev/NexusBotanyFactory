@@ -489,7 +489,7 @@ export const generateTreeData = (params, options = {}) => {
     }
   }
 
-  grow(new THREE.Vector3(0, 1.25, 0), new THREE.Vector3(0, 1, 0), params.height, params.radius, 0, -1, -1, {
+  grow(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0), params.height, params.radius, 0, -1, -1, {
     isLeader: false,
     leaderClass: 'primary',
     parentAxisId: -1,
@@ -587,5 +587,14 @@ export const generateTreeData = (params, options = {}) => {
     }
   }
 
-  return { nodes, skeleton, leafInstances }
+  const rootBone = skeleton[0] ?? null
+  const rootRadius = rootBone?.radius ?? params.radius ?? 0
+
+  return {
+    nodes,
+    skeleton,
+    leafInstances,
+    rootAnchor: new THREE.Vector3(0, -rootRadius, 0),
+    rootRadius,
+  }
 }

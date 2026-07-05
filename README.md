@@ -1,16 +1,30 @@
-# React + Vite
+# NexusBotanyFactory
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+NexusBotanyFactory is a procedural tree authoring tool that is being evolved into a Unity-first tree-pack production workflow.
 
-Currently, two official plugins are available:
+## Current Product Direction
+- author procedural tree specimens
+- preview `LOD0` through `LOD3` in the app
+- assemble packs of exactly 10 saved trees
+- export a pack spec for the companion packager
+- package GLB intermediates and optional FBX outputs through Blender
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Main Docs
+- [Goal](/Users/crimsonwheeler/Documents/GitHub/NexusBotanyFactory/docs/product/GOAL.md)
+- [Master Plan](/Users/crimsonwheeler/Documents/GitHub/NexusBotanyFactory/docs/product/MASTER_PLAN.md)
+- [LOD and Export Spec](/Users/crimsonwheeler/Documents/GitHub/NexusBotanyFactory/docs/product/LOD_AND_EXPORT_SPEC.md)
+- [Human View Validation](/Users/crimsonwheeler/Documents/GitHub/NexusBotanyFactory/docs/product/HUMAN_VIEW_VALIDATION.md)
 
-## React Compiler
+## Local Authoring App
+```bash
+npm run dev
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Companion Packager
+The app exports a JSON pack spec. The companion packager turns that spec into GLB outputs and attempts FBX conversion through Blender.
 
-## Expanding the ESLint configuration
+```bash
+npm run pack:fbx -- ./MyPack.pack.json --out ./exports
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+If Blender is installed and available on `PATH`, the packager also emits `FBX` files. If Blender is unavailable, the packager still writes the intermediate outputs and manifest entries that show which FBX conversions are pending.

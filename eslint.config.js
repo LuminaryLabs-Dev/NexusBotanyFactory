@@ -8,7 +8,7 @@ export default defineConfig([
   js.configs.recommended,
   reactHooks.configs.flat.recommended,
   {
-    files: ['**/*.{js,jsx}'],
+    files: ['**/*.{js,jsx,mjs}'],
     languageOptions: {
       ecmaVersion: 2020,
       globals: {

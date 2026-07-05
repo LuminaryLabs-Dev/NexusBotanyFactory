@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 
-export const buildTreeGeometry = (treeData) => {
+export const buildTreeGeometry = (treeData, options = {}) => {
   const vertices = []
   const normals = []
   const uvs = []
@@ -9,9 +9,10 @@ export const buildTreeGeometry = (treeData) => {
   const depths = []
   const branchTs = []
   let vertexOffset = 0
-  const radialSegments = 8
+  const radialSegments = Math.max(3, Math.floor(options.radialSegments ?? 8))
+  const nodeFilter = typeof options.nodeFilter === 'function' ? options.nodeFilter : () => true
 
-  treeData.nodes.forEach((node) => {
+  treeData.nodes.filter(nodeFilter).forEach((node) => {
     const points = node.points
     const numPoints = points.length
     if (numPoints < 2) return

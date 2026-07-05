@@ -17,8 +17,15 @@ export const getCapabilitiesHandler = async () => json({
     treeData: true,
     stats: true,
     validation: true,
-    preview: false,
-    export: false,
+    preview: {
+      lods: true,
+      impostors: true,
+    },
+    export: {
+      intermediatePackSpec: true,
+      companionPackager: true,
+      finalFbx: false,
+    },
     customSpecimens: true,
   },
   assetKinds: ['tree', 'shrub', 'bush', 'custom'],

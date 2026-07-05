@@ -3,8 +3,9 @@ import { clonePresetParams } from '../models/botany/schema/presets.js'
 import { createInitialParams, validateParams } from '../models/botany/validation/validation.js'
 import { apiClient } from '../lib/api-client.js'
 import { customSpecimenStore } from '../models/botany/custom-specimens/store.js'
+import { downloadGeneratedAsFbx } from '../models/botany/export/browserFbxDownload.js'
 import { setIn } from '../lib/objectPaths.js'
-import { useViewportViewModel } from './viewportViewModel.js'
+import { usePineSimulationViewModel } from './pineSimulationViewModel.js'
 
 const createInitialSpecimen = () => ({
   id: null,
@@ -45,6 +46,12 @@ const createBlankCustomDefinition = () => ({
 })`,
 })
 
+const DEFAULT_PINE_PRESET = {
+  id: 'builtin:pine',
+  name: 'Pine',
+  kind: 'tree',
+}
+
 const snapshotDefinition = (definition) => {
   if (!definition) return null
   return {
@@ -66,6 +73,7 @@ const snapshotDefinition = (definition) => {
 export const useEditorViewModel = () => {
   const [specimen, setSpecimen] = useState(createInitialSpecimen)
   const [debugMode, setDebugMode] = useState('beauty')
+  const [previewLodLevel, setPreviewLodLevel] = useState(0)
   const [activeTab, setActiveTab] = useState('build')
   const [activeCategories, setActiveCategories] = useState(['phenotype', 'form', 'leaders', 'preview'])
   const [specimenRevision, setSpecimenRevision] = useState(0)
@@ -144,7 +152,14 @@ export const useEditorViewModel = () => {
     [specimen.params, activeCustomDefinition],
   )
 
-  const viewportState = useViewportViewModel(specimen, specimenRevision)
+  const viewportState = usePineSimulationViewModel(specimen, specimenRevision)
+  const pinePresets = useMemo(
+    () => {
+      const matches = presetCatalog.filter((preset) => preset.name === 'Pine' || preset.id === 'builtin:pine' || preset.id === 'Pine')
+      return matches.length > 0 ? matches : [DEFAULT_PINE_PRESET]
+    },
+    [presetCatalog],
+  )
 
   const updatePath = (path, value) => {
     startTransition(() => {
@@ -158,10 +173,10 @@ export const useEditorViewModel = () => {
 
   const applyPreset = (presetInput) => {
     const preset = typeof presetInput === 'string'
-      ? presetCatalog.find((entry) => entry.id === presetInput || entry.name === presetInput) ?? null
+      ? pinePresets.find((entry) => entry.id === presetInput || entry.name === presetInput) ?? null
       : presetInput
 
-    if (!preset) return
+    if (!preset || preset.name !== 'Pine') return
 
     if (preset.kind === 'custom' || preset.customSpecimenId) {
       const definition = customDefinitions.find((entry) => entry.id === (preset.customSpecimenId ?? preset.id)) ?? null
@@ -461,12 +476,31 @@ export const useEditorViewModel = () => {
   }
 
   const load = async () => ({
-    presets: presetCatalog.map((preset) => preset.name),
+    presets: pinePresets.map((preset) => preset.name),
   })
+
+  const exportFbx = async () => {
+    setStatus('exporting')
+    setError(null)
+
+    try {
+      const result = await downloadGeneratedAsFbx({
+        generated: viewportState.generated,
+        name: specimen.name,
+      })
+      setStatus('exported')
+      return result
+    } catch (exportError) {
+      setError(exportError instanceof Error ? exportError.message : 'FBX export failed.')
+      setStatus('error')
+      throw exportError
+    }
+  }
 
   return {
     specimen,
     debugMode,
+    previewLodLevel,
     activeTab,
     activeCategories,
     frameRequestToken,
@@ -481,7 +515,7 @@ export const useEditorViewModel = () => {
     error,
     catalogStatus,
     catalogError,
-    presets: presetCatalog,
+    presets: pinePresets,
     customDefinitions,
     customDraft,
     selectedCustomSpecimenId,
@@ -499,6 +533,7 @@ export const useEditorViewModel = () => {
     requestFrame,
     getLevelSummary,
     setDebugMode,
+    setPreviewLodLevel,
     setActiveTab,
     toggleCategory,
     selectCustomDefinition,
@@ -514,5 +549,13 @@ export const useEditorViewModel = () => {
     applyDraftToSpecimen,
     exportDefinitions,
     importDefinitions,
+    exportFbx,
+    playback: viewportState.playback,
+    playSimulation: viewportState.play,
+    pauseSimulation: viewportState.pause,
+    resetSimulation: viewportState.reset,
+    stepSimulation: viewportState.stepForward,
+    seekSimulationTick: viewportState.seekTick,
+    setPlaybackSpeed: viewportState.setSpeed,
   }
 }
