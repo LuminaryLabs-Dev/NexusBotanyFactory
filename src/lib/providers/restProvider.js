@@ -1,4 +1,4 @@
-const defaultApiBaseUrl = 'http://localhost:3002/api'
+const defaultApiBaseUrl = 'http://127.0.0.1:3002/api'
 
 const getApiBaseUrl = () => import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? defaultApiBaseUrl
 

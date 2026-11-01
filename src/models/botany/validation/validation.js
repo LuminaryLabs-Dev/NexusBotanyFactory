@@ -311,7 +311,11 @@ export const validateParams = (params, extraFieldSchema = []) => {
   if (!ORBIT_MODE_ENUM.includes(normalizedParams.orbitMode)) {
     pushValidationError(errors, 'params.orbitMode', `Expected one of: ${ORBIT_MODE_ENUM.join(', ')}.`, normalizedParams.orbitMode)
   }
-  if (normalizedParams.recursion > normalizedParams.levels.length - 1) {
+  if (
+    Array.isArray(normalizedParams.levels) &&
+    Number.isFinite(normalizedParams.recursion) &&
+    normalizedParams.recursion > normalizedParams.levels.length - 1
+  ) {
     pushValidationError(errors, 'params.recursion', 'Recursion cannot exceed the highest defined level index.', normalizedParams.recursion)
   }
 

@@ -6,11 +6,15 @@
   "scripts": {
     "start": "vite",
     "dev": "vite",
-    "dev:api": "node --watch server/index.js",
-    "start:api": "node server/index.js",
+    "dev:stack": "node scripts/dev-stack.mjs",
+    "dev:api": "node --watch src/server/runtime/dev-server.js",
+    "start:api": "node src/server/runtime/dev-server.js",
+    "check:env": "node scripts/sg00-verify.mjs",
+    "test": "node --test",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "pack:fbx": "node scripts/package-tree-pack.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.555.0",

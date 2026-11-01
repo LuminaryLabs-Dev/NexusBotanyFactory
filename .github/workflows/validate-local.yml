@@ -1,0 +1,58 @@
+name: Validate NexusBotanyFactory
+
+on:
+  push:
+    branches:
+      - 'work/nbf-sg00-sg01-validation-*'
+  pull_request:
+    branches:
+      - build
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Validate source and native bounded generator
+        run: npm test
+      - name: Validate Vite production bundle
+        run: |
+          npm run build
+          test -s dist/index.html
+      - name: Validate actual HTTP API
+        shell: bash
+        run: |
+          set -euo pipefail
+          NEXUS_BOTANY_API_PORT=31337 node src/server/runtime/dev-server.js > /tmp/nbf-api.log 2>&1 &
+          API_PID=$!
+          trap 'kill "$API_PID" 2>/dev/null || true; cat /tmp/nbf-api.log' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:31337/api/health >/dev/null; then break; fi
+            sleep 1
+          done
+          node --input-type=module <<'JS'
+          const base = 'http://127.0.0.1:31337/api'
+          const health = await fetch(base + '/health')
+          if (!health.ok || !(await health.json()).ok) process.exit(1)
+          const partial = await fetch(base + '/build/validate', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ params: { recursion: 3 } }),
+          })
+          if (partial.status !== 422) throw new Error('Expected 422 for partial params, received ' + partial.status)
+          const malformed = await fetch(base + '/build/validate', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: '{',
+          })
+          if (malformed.status !== 400) throw new Error('Expected 400 for malformed JSON, received ' + malformed.status)
+          console.log('Health=200, incomplete=422, malformed=400')
+          JS
