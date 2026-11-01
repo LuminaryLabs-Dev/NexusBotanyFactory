@@ -1,0 +1,31 @@
+name: SG-02 Native Specimen Baseline
+
+on:
+  push:
+    branches: ['work/nbf-sg00-sg01-validation-*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Generate ten native specimens
+        run: node scripts/sg02-build-baseline.mjs sg02-output
+      - name: Verify independent reload and deterministic regeneration
+        run: node scripts/sg02-verify-baseline.mjs sg02-output
+      - name: Publish bounded baseline evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbf-sg02-native-ten-specimens
+          path: sg02-output/
+          if-no-files-found: error
