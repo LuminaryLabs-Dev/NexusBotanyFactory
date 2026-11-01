@@ -65,6 +65,23 @@ jobs:
             ${{ runner.temp }}/nbf-browser-dom.html
             ${{ runner.temp }}/nbf-chrome.log
           if-no-files-found: warn
+      - name: Package checked-out source and Vite bundle for local review
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/nbf-transfer"
+          tar -czf "$RUNNER_TEMP/nbf-transfer/source-snapshot.tar.gz" \
+            README.md package.json package-lock.json index.html vite.config.js \
+            public src scripts tests docs app .github
+          tar -czf "$RUNNER_TEMP/nbf-transfer/vite-dist.tar.gz" dist
+          printf '%s\n' "$GITHUB_SHA" > "$RUNNER_TEMP/nbf-transfer/SOURCE_SHA.txt"
+          ls -lh "$RUNNER_TEMP/nbf-transfer"
+      - name: Retain sandbox-transfer assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbf-sg01-sandbox-transfer
+          path: ${{ runner.temp }}/nbf-transfer/
+          if-no-files-found: error
       - name: Validate actual HTTP API
         shell: bash
         run: |
