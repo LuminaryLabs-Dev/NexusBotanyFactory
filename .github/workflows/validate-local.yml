@@ -48,7 +48,9 @@ jobs:
             --user-data-dir="$RUNNER_TEMP/nbf-chrome-profile" --virtual-time-budget=12000 \
             --window-size=1440,900 --dump-dom http://127.0.0.1:5173/ \
             > "$RUNNER_TEMP/nbf-browser-dom.html" 2> "$RUNNER_TEMP/nbf-chrome.log"
-          grep -q 'Pine Growth Simulation' "$RUNNER_TEMP/nbf-browser-dom.html"
+          # The tree-first UX replaces the former Pine Growth Simulation screen.
+          grep -q 'Remix this tree' "$RUNNER_TEMP/nbf-browser-dom.html"
+          grep -q 'Study growth over time' "$RUNNER_TEMP/nbf-browser-dom.html"
           "$BROWSER" --headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu \
             --user-data-dir="$RUNNER_TEMP/nbf-chrome-profile-ss" --virtual-time-budget=12000 \
             --window-size=1440,900 --screenshot="$RUNNER_TEMP/nbf-editor.png" \
