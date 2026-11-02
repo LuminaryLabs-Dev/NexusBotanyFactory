@@ -42,6 +42,12 @@ const applyImpostorFrameToTexture = (texture, frameRect) => {
   texture.updateMatrix?.()
 }
 
+export const LIGHTING_PRESETS = Object.freeze({
+  studio: { sun: 3.0, fill: 0.9, ambient: 1.35, exposure: 1.03, shadow: true, keyPosition: [45, 92, 55] },
+  sunny: { sun: 3.65, fill: 0.6, ambient: 1.05, exposure: 0.98, shadow: true, keyPosition: [80, 104, 15] },
+  overcast: { sun: 1.45, fill: 1.25, ambient: 1.9, exposure: 1.15, shadow: false, keyPosition: [24, 105, 70] },
+})
+
 const toVector3 = (value, fallback = new THREE.Vector3(0, 0, 0)) => {
   if (value instanceof THREE.Vector3) {
     return value.clone()
@@ -58,10 +64,11 @@ const toVector3 = (value, fallback = new THREE.Vector3(0, 0, 0)) => {
   return (fallback instanceof THREE.Vector3 ? fallback : new THREE.Vector3(0, 0, 0)).clone()
 }
 
-export default function BotanyViewport({ specimen, generated, debugMode, previewLodLevel = 0, frameRequestToken, specimenRevision, generationRevision }) {
+export default function BotanyViewport({ specimen, generated, debugMode, previewLodLevel = 0, frameRequestToken, specimenRevision, generationRevision, lightingPreset = 'studio' }) {
   const mountRef = useRef(null)
   const rendererRef = useRef(null)
   const sceneRef = useRef(null)
+  const lightsRef = useRef(null)
   const cameraRef = useRef(null)
   const controlsRef = useRef(null)
   const terrainMeshRef = useRef(null)
@@ -99,6 +106,23 @@ export default function BotanyViewport({ specimen, generated, debugMode, preview
   const terrainSignature = generated?.renderArtifacts?.terrainSignature
 
   useEffect(() => {
+    const lights = lightsRef.current
+    const renderer = rendererRef.current
+    if (!lights || !renderer) return
+    const profile = LIGHTING_PRESETS[lightingPreset] ?? LIGHTING_PRESETS.studio
+    renderer.toneMappingExposure = profile.exposure
+    renderer.shadowMap.enabled = profile.shadow
+    lights.ambientLight.intensity = profile.ambient
+    lights.keyLight.intensity = profile.sun
+    lights.keyLight.position.set(...profile.keyPosition)
+    lights.keyLight.castShadow = profile.shadow
+    lights.fillLight.intensity = profile.fill
+    lights.bounceLight.intensity = profile.shadow ? 0.4 : 0.7
+    renderer.shadowMap.needsUpdate = true
+  }, [lightingPreset, rendererErrorState])
+
+
+  useEffect(() => {
     terrainRecipeRef.current = generated?.renderArtifacts?.terrainRecipe
   }, [generated?.renderArtifacts?.terrainRecipe, terrainSignature])
 
@@ -114,8 +138,11 @@ export default function BotanyViewport({ specimen, generated, debugMode, preview
     let renderer
 
     try {
-      renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance', alpha: true })
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', alpha: false })
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75))
+      renderer.outputColorSpace = THREE.SRGBColorSpace
+      renderer.toneMapping = THREE.ACESFilmicToneMapping
+      renderer.toneMappingExposure = LIGHTING_PRESETS.studio.exposure
       renderer.setSize(mountNode.clientWidth, mountNode.clientHeight)
       renderer.shadowMap.enabled = true
       renderer.shadowMap.type = THREE.PCFSoftShadowMap
@@ -126,19 +153,29 @@ export default function BotanyViewport({ specimen, generated, debugMode, preview
       skyTextureRef.current = createSkyTexture()
       scene.background = skyTextureRef.current
       scene.fog = new THREE.Fog('#e8f1ea', 900, 2200)
-      scene.add(new THREE.HemisphereLight(0xf4fff6, 0x718468, 1.1))
-      const keyLight = new THREE.DirectionalLight(0xfff7e8, 2.8)
-      keyLight.position.set(52, 94, 22)
+      const ambientLight = new THREE.HemisphereLight(0xf4fff6, 0x526d58, LIGHTING_PRESETS.studio.ambient)
+      scene.add(ambientLight)
+      const keyLight = new THREE.DirectionalLight(0xfff6dc, LIGHTING_PRESETS.studio.sun)
+      keyLight.position.set(...LIGHTING_PRESETS.studio.keyPosition)
       keyLight.castShadow = true
       keyLight.shadow.mapSize.set(2048, 2048)
-      keyLight.shadow.bias = -0.0005
+      keyLight.shadow.bias = -0.00015
+      keyLight.shadow.normalBias = 0.035
+      keyLight.shadow.radius = 3
+      keyLight.shadow.camera.left = -75
+      keyLight.shadow.camera.right = 75
+      keyLight.shadow.camera.top = 100
+      keyLight.shadow.camera.bottom = -65
+      keyLight.shadow.camera.near = 1
+      keyLight.shadow.camera.far = 260
       scene.add(keyLight)
-      const fillLight = new THREE.DirectionalLight(0xd7f1ea, 1.6)
+      const fillLight = new THREE.DirectionalLight(0xd7f1ea, LIGHTING_PRESETS.studio.fill)
       fillLight.position.set(-85, 42, -70)
       scene.add(fillLight)
       const bounceLight = new THREE.DirectionalLight(0x95a988, 0.45)
       bounceLight.position.set(0, 14, 120)
       scene.add(bounceLight)
+      lightsRef.current = { ambientLight, keyLight, fillLight, bounceLight }
 
       const terrainResources = buildTerrainResources(terrainRecipeRef.current)
       const terrain = new THREE.Mesh(terrainResources.terrainGeo, terrainResources.terrainMaterial)
@@ -221,6 +258,7 @@ export default function BotanyViewport({ specimen, generated, debugMode, preview
       impostorTextureRef.current?.dispose()
       leafGeometryRef.current?.dispose()
       skyTextureRef.current?.dispose()
+      lightsRef.current = null
       renderer?.dispose()
       mountNode.replaceChildren()
     }
@@ -428,6 +466,7 @@ export default function BotanyViewport({ specimen, generated, debugMode, preview
 
       updateLeafMaterial(leavesRef.current.material, materialRecipe, { showLeafDensity, speciesName: specimen.params.name, leafStyle: specimen.params.leafStyle })
       const dummy = new THREE.Object3D()
+      const leafTint = new THREE.Color()
       generated.treeData.leafInstances.forEach((leaf, index) => {
         dummy.position.copy(leaf.pos)
         dummy.lookAt(leaf.pos.clone().add(leaf.dir))
@@ -437,8 +476,13 @@ export default function BotanyViewport({ specimen, generated, debugMode, preview
         dummy.scale.set(leafSize * profile.width, leafSize * profile.height, leafSize)
         dummy.updateMatrix()
         leavesRef.current.setMatrixAt(index, dummy.matrix)
+        const variation = Math.sin((index + 1) * 12.9898 + specimen.params.seed * 0.17) * 43758.5453
+        const tone = 0.82 + (variation - Math.floor(variation)) * 0.27
+        leafTint.setRGB(tone * 0.96, tone, tone * 0.9)
+        leavesRef.current.setColorAt(index, leafTint)
       })
       leavesRef.current.instanceMatrix.needsUpdate = true
+      if (leavesRef.current.instanceColor) leavesRef.current.instanceColor.needsUpdate = true
       leavesRef.current.visible = !showBones
     } else if ((activeLod?.level === 1 || activeLod?.level === 2) && activeLod.leafCards?.length > 0) {
       if (leavesRef.current) {

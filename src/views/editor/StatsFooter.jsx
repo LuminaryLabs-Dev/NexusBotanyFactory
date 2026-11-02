@@ -1,30 +1,10 @@
 'use client'
 
-export default function StatsFooter({
-  boneCount,
-  status,
-  error,
-  generationPending,
-  generationError,
-  previewLodLevel = 0,
-  simulation = null,
-}) {
-  const footerLabel = error
-    ? `Error: ${error}`
-    : generationError
-      ? `Generation: ${generationError}`
-      : generationPending
-        ? 'Status: updating'
-        : `Status: ${status}`
-
-  const timelineLabel = simulation
-    ? `Year ${simulation.currentYear}/${simulation.years} · Tick ${simulation.currentTickInYear}/${simulation.ticksPerYear}`
-    : `LOD${previewLodLevel} · Bones: ${boneCount}`
-
-  return (
-    <div className="flex items-center justify-between border-t border-white/30 bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(210,228,214,0.08))] px-4 py-4 text-[8px] font-black uppercase tracking-[0.26em] text-[color:var(--text-muted)]">
-      <span className="max-w-[70%] truncate">{footerLabel}</span>
-      <span className="tabular-nums">{timelineLabel}</span>
-    </div>
-  )
+export default function StatsFooter({ boneCount, status, error, generationPending, generationError, previewLodLevel=0, simulation=null }) {
+  const message = error ? `Edit error: ${error}` : generationError ? `Generation error: ${generationError}` : generationPending ? 'Updating tree…' : 'Tree preview ready'
+  const statusColor = error || generationError ? 'text-red-800' : 'text-[#2a5a34]'
+  return <div role="status" aria-live="polite" className="flex items-center justify-between gap-3 border-t border-[#c5ddc7] bg-white/70 px-4 py-3 text-xs">
+    <span className={statusColor}>{message}</span>
+    <span className="shrink-0 text-[#315640] tabular-nums">{simulation ? `Growth ${simulation.currentYear}/${simulation.years} years` : `LOD ${previewLodLevel} · ${boneCount} axes`}</span>
+  </div>
 }

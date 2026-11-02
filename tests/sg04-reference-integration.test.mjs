@@ -97,6 +97,6 @@ test('production code routes the main randomizer through native randomization an
   const inspector=readFileSync(new URL('../src/views/editor/InspectorPanel.jsx',import.meta.url),'utf8')
   assert.match(editor,/editor\.specimen\.kind === 'tree' \? editor\.randomizeTree : editor\.randomizeSeed/)
   assert.match(vm,/getNativePresetCatalog\(presetCatalog\)/)
-  assert.match(inspector,/signatureSpecs\.map/)
-  assert.match(inspector,/featuredPaths\.has/)
+  assert.match(inspector,/getFieldsForTraitGroup/)
+  assert.match(inspector,/role="tablist"/)
 })

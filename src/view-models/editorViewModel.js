@@ -179,6 +179,7 @@ export const useEditorViewModel = () => {
   const updateLevel = (depth, key, value) => updatePath(`params.levels[${depth}].${key}`, value)
 
   const applyPreset = (presetInput) => {
+    viewportState.setGrowthEnabled(false)
     const preset = typeof presetInput === 'string'
       ? builtInPresets.find((entry) => entry.id === presetInput || entry.name === presetInput) ?? null
       : presetInput
@@ -574,6 +575,8 @@ export const useEditorViewModel = () => {
     exportDefinitions,
     importDefinitions,
     exportFbx,
+    growthPreviewEnabled: viewportState.growthEnabled && specimen.params.name === 'Pine',
+    setGrowthPreviewEnabled: viewportState.setGrowthEnabled,
     playback: viewportState.playback,
     playSimulation: viewportState.play,
     pauseSimulation: viewportState.pause,

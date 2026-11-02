@@ -67,7 +67,7 @@ export function InspectorField({ field, value, onChange, disabled = false }) {
     <div className="flex items-center justify-between gap-2 text-[9px] font-black uppercase tracking-[0.22em] text-[color:var(--text-muted)]">
       <label className="truncate pr-2">{field.label}</label>
       {!['toggle', 'select', 'text', 'textarea', 'code'].includes(field.widget) ? (
-        <span className="font-mono shrink-0 text-[color:var(--accent-moss)]">{value}{field.unit ?? ''}</span>
+        <span className="font-mono shrink-0 text-[color:var(--accent-moss)] font-bold text-xs">{value}{field.unit ?? ''}</span>
       ) : null}
     </div>
   )
@@ -85,7 +85,7 @@ export function InspectorField({ field, value, onChange, disabled = false }) {
             value={value}
             onChange={(event) => onChange(field.integer ? Number.parseInt(event.target.value, 10) : Number.parseFloat(event.target.value))}
             disabled={disabled}
-            className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-[linear-gradient(90deg,rgba(132,176,143,0.34),rgba(255,255,255,0.8),rgba(132,176,143,0.34))] accent-[color:var(--accent-moss)]"
+            className="h-3 w-full cursor-pointer appearance-none rounded-full bg-[linear-gradient(90deg,rgba(132,176,143,0.34),rgba(255,255,255,0.8),rgba(132,176,143,0.34))] accent-[color:var(--accent-moss)]"
           />
           {field.help ? <div className="pt-1 text-[9px] leading-4 text-[color:var(--text-muted)]">{field.help}</div> : null}
         </div>

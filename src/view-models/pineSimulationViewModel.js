@@ -4,14 +4,6 @@ import { generateSpecimen } from '../models/botany/services/specimenGenerationSe
 import { buildGeneratedFromGrowthState } from '../models/botany/simulation/buildGeneratedFromGrowthState.js'
 import { advancePineGrowthTick, initializePineGrowth, seekPineGrowth } from '../models/botany/simulation/pineGrowth.js'
 
-const createExecutionState = () => {
-  if (typeof window === 'undefined') {
-    return 'main-thread'
-  }
-
-  return typeof Worker !== 'undefined' ? 'initializing' : 'main-thread'
-}
-
 const cloneSpecimenInput = (specimen, revision) => ({
   id: specimen.id,
   name: specimen.name,
@@ -46,7 +38,8 @@ export const usePineSimulationViewModel = (specimen, revision) => {
   const workerRef = useRef(null)
   const requestIdRef = useRef(0)
   const mainThreadStateRef = useRef(null)
-  const [executionState, setExecutionState] = useState(createExecutionState)
+  const [executionState, setExecutionState] = useState('main-thread')
+  const [growthEnabled, setGrowthEnabled] = useState(false)
   const [state, setState] = useState({
     generated: null,
     pending: true,
@@ -63,7 +56,7 @@ export const usePineSimulationViewModel = (specimen, revision) => {
   }
 
   useEffect(() => {
-    if (specimen.params.name !== 'Pine') {
+    if (!growthEnabled || specimen.params.name !== 'Pine') {
       queueMicrotask(() => setExecutionState('main-thread'))
       return undefined
     }
@@ -123,13 +116,13 @@ export const usePineSimulationViewModel = (specimen, revision) => {
       })
       return undefined
     }
-  }, [executionState, specimen.params.name, specimen.params.simulationYears, specimen.params.ticksPerYear])
+  }, [growthEnabled, executionState, specimen.params.name, specimen.params.simulationYears, specimen.params.ticksPerYear])
 
   useEffect(() => {
     if (!deferredInput) return undefined
     let cancelled = false
 
-    if (deferredInput.params.name === 'Pine' && executionState === 'worker' && workerRef.current) {
+    if (growthEnabled && deferredInput.params.name === 'Pine' && executionState === 'worker' && workerRef.current) {
       queueMicrotask(() => {
         if (cancelled) return
         setState((current) => ({
@@ -152,7 +145,7 @@ export const usePineSimulationViewModel = (specimen, revision) => {
       }
     }
 
-    if (deferredInput.params?.name !== 'Pine') {
+    if (!growthEnabled || deferredInput.params?.name !== 'Pine') {
       try {
         const generated = generateSpecimen(deferredInput)
         queueMicrotask(() => {
@@ -189,10 +182,10 @@ export const usePineSimulationViewModel = (specimen, revision) => {
     return () => {
       cancelled = true
     }
-  }, [deferredInput, executionState])
+  }, [deferredInput, executionState, growthEnabled])
 
   useEffect(() => {
-    if (deferredInput.params?.name !== 'Pine') return undefined
+    if (!growthEnabled || deferredInput.params?.name !== 'Pine') return undefined
     if (!state.playback.playing || state.pending || state.playback.completed) return undefined
 
     const intervalMs = Math.max(24, Math.round(1000 / Math.max(state.playback.speed, 1)))
@@ -223,7 +216,7 @@ export const usePineSimulationViewModel = (specimen, revision) => {
     }, intervalMs)
 
     return () => window.clearInterval(intervalId)
-  }, [deferredInput, executionState, state.pending, state.playback.completed, state.playback.playing, state.playback.speed])
+  }, [deferredInput, executionState, growthEnabled, state.pending, state.playback.completed, state.playback.playing, state.playback.speed])
 
   const reset = () => {
     setState((current) => ({
@@ -334,6 +327,12 @@ export const usePineSimulationViewModel = (specimen, revision) => {
 
   return {
     generated: state.generated,
+    growthEnabled,
+    setGrowthEnabled: (enabled) => {
+      setState(current => ({ ...current, pending: true, playback: {...current.playback, playing: false} }))
+      setExecutionState(enabled ? 'initializing' : 'main-thread')
+      setGrowthEnabled(Boolean(enabled))
+    },
     pending: state.pending,
     error: state.error,
     revision: state.revision,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Trees } from 'lucide-react'
 import { useEditorViewModel } from '../../view-models/editorViewModel.js'
 import InspectorPanel from './InspectorPanel.jsx'
@@ -17,6 +17,7 @@ const VIEW_MODE_OPTIONS = [
 ]
 
 const PLAYBACK_SPEEDS = [1, 4, 12, 24]
+const LIGHTING_OPTIONS = ['studio', 'sunny', 'overcast']
 
 const TOOLBAR_PANEL_CLASS = 'glass-panel-strong shrink-0 rounded-[1.35rem] border border-[rgba(22,66,29,0.58)] px-4 py-3'
 const TOOLBAR_GROUP_CLASS = 'flex flex-wrap items-center gap-2'
@@ -28,7 +29,7 @@ const formatProgress = (playback) => {
   return `Year ${playback.currentYear}/${playback.years} · Tick ${playback.currentTickInYear}/${playback.ticksPerYear}`
 }
 
-const ViewportToolbar = ({ editor }) => (
+const ViewportToolbar = ({ editor, lighting, setLighting }) => (
   <div className={`${TOOLBAR_PANEL_CLASS} flex items-center justify-between gap-3`}>
     <div className={`${TOOLBAR_GROUP_CLASS} min-w-0 flex-1`}>
       <button onClick={editor.requestFrame} className={TOOLBAR_BUTTON_BASE}>Frame</button>
@@ -41,6 +42,13 @@ const ViewportToolbar = ({ editor }) => (
           {mode.label}
         </button>
       ))}
+    </div>
+    <div className={`${TOOLBAR_GROUP_CLASS} shrink-0`}>
+      <label className="flex items-center gap-2 text-xs font-semibold text-[#204228]">Lighting
+        <select aria-label="Lighting preset" value={lighting} onChange={e=>setLighting(e.target.value)} className="rounded-lg border px-2 py-2 text-xs">
+          {LIGHTING_OPTIONS.map(v=><option key={v} value={v}>{v==='sunny'?'Sunny':v==='overcast'?'Overcast':'Studio'}</option>)}
+        </select>
+      </label>
     </div>
     <div className={`${TOOLBAR_GROUP_CLASS} shrink-0`}>
       {[0, 1, 2, 3].map((level) => (
@@ -112,9 +120,9 @@ const PlaybackToolbar = ({ editor }) => {
 
 const ViewportStatusCard = ({ editor }) => {
   const message = editor.generationError
-    ? `Simulation error: ${editor.generationError}`
+    ? `Tree generation error: ${editor.generationError}`
     : editor.generationPending
-      ? 'Simulation is loading.'
+      ? 'Updating tree preview…'
       : null
 
   if (!message) return null
@@ -181,7 +189,7 @@ const AppShellFallback = ({ error, reset }) => (
           </div>
         </div>
       </main>
-      <aside className="glass-panel relative flex w-[360px] flex-col overflow-hidden rounded-[2rem] border border-white/60 p-4">
+      <aside className="glass-panel relative flex w-[405px] flex-col overflow-hidden rounded-[2rem] border border-white/60 p-4">
         <div className="text-[10px] font-black uppercase tracking-[0.26em] text-[color:var(--text-secondary)]">Inspector</div>
         <div className="pt-2 text-[10px] leading-5 text-[color:var(--text-muted)]">
           The live editor failed before specimen state was available. The shell stays visible so the failure is explicit instead of collapsing to the page background.
@@ -193,6 +201,7 @@ const AppShellFallback = ({ error, reset }) => (
 
 export default function EditorScreen() {
   const editor = useEditorViewModel()
+  const [lighting, setLighting] = useState('studio')
   const editorRef = useRef(editor)
 
   useEffect(() => {
@@ -220,7 +229,7 @@ export default function EditorScreen() {
             </div>
             <div className="min-w-0">
               <h1 className="truncate text-sm font-black uppercase tracking-[0.24em] text-[color:var(--text-primary)]">NexusBotanyFactory</h1>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[color:var(--text-muted)]">{editor.specimen.params.name === 'Pine' ? 'Pine Growth Simulation' : `${editor.specimen.params.name} Native Tree Editor`}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[color:var(--text-muted)]">{`${editor.specimen.params.name} · Tree Editor`}</p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
@@ -239,7 +248,7 @@ export default function EditorScreen() {
 
       <div className="relative flex flex-1 min-h-0 overflow-hidden px-4 pb-4 pt-3">
         <section className="mr-4 flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-          <ViewportToolbar editor={editor} />
+          <ViewportToolbar editor={editor} lighting={lighting} setLighting={setLighting} />
           <main className="glass-panel-strong relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[2rem] border border-white/60">
             <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.2),transparent_34%),linear-gradient(180deg,rgba(249,255,250,0.12),rgba(255,255,255,0)_28%)]" />
             <div className="relative z-10 flex min-h-0 flex-1 flex-col">
@@ -257,17 +266,21 @@ export default function EditorScreen() {
                     frameRequestToken={editor.frameRequestToken}
                     specimenRevision={editor.specimenRevision}
                     generationRevision={editor.generationRevision}
+                    lightingPreset={lighting}
                   />
                 </AppErrorBoundary>
               </div>
             </div>
           </main>
-          {editor.specimen.params.name === 'Pine' ? <PlaybackToolbar editor={editor} /> : (
-            <div className="px-4 py-2 text-[10px] text-[color:var(--text-muted)]">Static native factory preview · Growth timeline available for Pine</div>
-          )}
+          {editor.specimen.params.name === 'Pine' && <div className="shrink-0">
+            <button type="button" className="rounded-xl border border-[#8cae8a] bg-white/60 px-4 py-2 text-xs font-semibold text-[#27472c]" onClick={() => editor.setGrowthPreviewEnabled(!editor.growthPreviewEnabled)}>
+              {editor.growthPreviewEnabled ? '← Return to tree editor' : 'Optional · Study growth over time'}
+            </button>
+            {editor.growthPreviewEnabled && <div className="pt-2"><p className="pb-2 text-xs text-[#426049]">Growth study starts with a seedling. Return to the editor to view the mature pine.</p><PlaybackToolbar editor={editor}/></div>}
+          </div>}
         </section>
 
-        <aside className="glass-panel relative flex w-[360px] min-h-0 flex-col overflow-hidden rounded-[2rem] border border-white/60">
+        <aside className="glass-panel relative flex w-[405px] min-h-0 flex-col overflow-hidden rounded-[2rem] border border-white/60">
           <InspectorPanel nativeValidation={editor.nativeValidation} randomizeTree={editor.randomizeTree} normalizeTree={editor.normalizeTree}
             specimen={editor.specimen}
             applyPreset={editor.applyPreset}
@@ -282,7 +295,7 @@ export default function EditorScreen() {
             generationPending={editor.generationPending}
             generationError={editor.generationError}
             previewLodLevel={editor.previewLodLevel}
-            simulation={editor.generated?.simulation ?? editor.playback ?? null}
+            simulation={editor.growthPreviewEnabled ? editor.playback : null}
           />
         </aside>
       </div>
