@@ -8,6 +8,8 @@ import { getBuildWorkspaceSections } from '../../models/botany/ui/workspaceSpecs
 import { getSpeciesContract, getNativeInspectorSpecs } from '../../models/botany/schema/speciesContracts.js'
 import { EDITOR_TRAIT_GROUPS, getFieldsForTraitGroup } from '../../models/botany/ui/nativeTraitGroups.js'
 
+const labelFor = group => group === 'character' ? 'Character' : group.charAt(0).toUpperCase() + group.slice(1)
+
 export default function InspectorPanel({ specimen, applyPreset, updatePath, presets, customDefinition, nativeValidation, randomizeTree, normalizeTree }) {
   const [activeGroup, setActiveGroup] = useState('character')
   const [showTechnical, setShowTechnical] = useState(false)

@@ -31,6 +31,9 @@ test('pine starts with a full factory preview, growth timeline is opt-in', () =>
   assert.match(vm,/setGrowthEnabled: \(enabled\)/)
   assert.match(screen,/editor\.growthPreviewEnabled && <div/)
   assert.match(screen,/Study growth over time/)
+  const inspector=src('views/editor/InspectorPanel.jsx')
+  assert.match(inspector,/const labelFor = group =>/)
+  assert.match(inspector,/labelFor\(activeGroup\)/)
   assert.match(screen,/Return to tree editor/)
 })
 
