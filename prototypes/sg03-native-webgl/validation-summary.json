@@ -1,0 +1,30 @@
+{
+  "milestone": "SG-03",
+  "disposition": "complete — standalone prototype",
+  "date": "2026-11-01",
+  "source": "Chromium + ANGLE SwiftShader browser validation receipt",
+  "editorSha256": "e506af8243a3d6359b10605a6256f2248921b489a11cd270206375f6fee5cc83",
+  "catalogTreeTypes": 105,
+  "nativeTraitsPerTaxon": 5,
+  "browserChecks": {
+    "passed": 20,
+    "total": 20,
+    "errors": 0
+  },
+  "lodTriangleLimits": [
+    30000,
+    14500,
+    4500,
+    320
+  ],
+  "scope": "standalone WebGL2 only",
+  "unverified": [
+    "production React/Three.js integration",
+    "315-seed native production regression",
+    "16-angle impostor",
+    "FBX/Unity import",
+    "GPU-hardware performance",
+    "all 105 botanically certified"
+  ],
+  "evidenceDoc": "https://docs.google.com/document/d/1vAqOjGSAGf65p_TN72d3L8vObnQClhL3yh_R46eus1I/edit"
+}
