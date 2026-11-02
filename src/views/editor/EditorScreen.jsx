@@ -220,11 +220,11 @@ export default function EditorScreen() {
             </div>
             <div className="min-w-0">
               <h1 className="truncate text-sm font-black uppercase tracking-[0.24em] text-[color:var(--text-primary)]">NexusBotanyFactory</h1>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[color:var(--text-muted)]">Pine Growth Simulation</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[color:var(--text-muted)]">{editor.specimen.params.name === 'Pine' ? 'Pine Growth Simulation' : `${editor.specimen.params.name} Native Tree Editor`}</p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
-            <button onClick={editor.randomizeSeed} className="rounded-[0.95rem] border border-[rgba(22,66,29,0.42)] bg-[linear-gradient(180deg,rgba(248,255,245,0.72),rgba(206,236,199,0.3))] px-4 py-[0.55rem] text-[9px] font-black uppercase tracking-[0.24em] text-[#173319] shadow-[inset_1px_1px_0_rgba(255,255,255,0.46),inset_-1px_-1px_0_rgba(25,63,30,0.1)]">Randomize</button>
+            <button onClick={editor.specimen.kind === 'tree' ? editor.randomizeTree : editor.randomizeSeed} className="rounded-[0.95rem] border border-[rgba(22,66,29,0.42)] bg-[linear-gradient(180deg,rgba(248,255,245,0.72),rgba(206,236,199,0.3))] px-4 py-[0.55rem] text-[9px] font-black uppercase tracking-[0.24em] text-[#173319] shadow-[inset_1px_1px_0_rgba(255,255,255,0.46),inset_-1px_-1px_0_rgba(25,63,30,0.1)]">{editor.specimen.kind === 'tree' ? 'Randomize Native' : 'Randomize Seed'}</button>
             <button
               onClick={() => void editor.exportFbx()}
               disabled={editor.generationPending || !editor.generated?.treeData}
@@ -262,11 +262,13 @@ export default function EditorScreen() {
               </div>
             </div>
           </main>
-          <PlaybackToolbar editor={editor} />
+          {editor.specimen.params.name === 'Pine' ? <PlaybackToolbar editor={editor} /> : (
+            <div className="px-4 py-2 text-[10px] text-[color:var(--text-muted)]">Static native factory preview · Growth timeline available for Pine</div>
+          )}
         </section>
 
         <aside className="glass-panel relative flex w-[360px] min-h-0 flex-col overflow-hidden rounded-[2rem] border border-white/60">
-          <InspectorPanel
+          <InspectorPanel nativeValidation={editor.nativeValidation} randomizeTree={editor.randomizeTree} normalizeTree={editor.normalizeTree}
             specimen={editor.specimen}
             applyPreset={editor.applyPreset}
             updatePath={editor.updatePath}

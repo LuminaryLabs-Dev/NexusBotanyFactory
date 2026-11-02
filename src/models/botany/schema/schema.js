@@ -1,4 +1,5 @@
 import { clonePresetParams, SPECIES_PRESETS } from './presets.js'
+import { createSpeciesDefaults, getSpeciesContract } from './speciesContracts.js'
 
 export const DEFAULT_PRESET_NAME = 'Pine'
 export const SUPPORTED_ASSET_KINDS = ['tree', 'shrub', 'bush', 'custom']
@@ -8,6 +9,8 @@ export const ORBIT_MODE_ENUM = ['specimen-locked']
 
 export const BOTANY_PARAM_FIELD_SCHEMA = {
   name: { type: 'string', readOnly: true },
+  speciesId: { type: 'string', optional: true },
+  speciesContractVersion: { type: 'integer', min: 1, max: 100, optional: true },
   seed: { type: 'integer', min: 0, max: 2147483647 },
   simulationYears: { type: 'integer', min: 1, max: 200 },
   ticksPerYear: { type: 'integer', min: 1, max: 120 },
@@ -99,21 +102,28 @@ export const BOTANY_LEVEL_FIELD_SCHEMA = {
   splitSmoothness: { type: 'number', min: 0, max: 2 },
 }
 
-const makePresetSummary = ([name, params]) => ({
-  id: name,
-  name,
-  kind: 'tree',
-  leafStyle: params.leafStyle,
-  leafArrangement: params.leafArrangement,
-  defaults: {
-    height: params.height,
-    radius: params.radius,
-    recursion: params.recursion,
-    leafCount: params.leafCount,
-  },
-})
+const makePresetSummary = ([name, initial]) => {
+  const params = createSpeciesDefaults(name, initial)
+  const contract = getSpeciesContract(name)
+  return {
+    id: name,
+    name,
+    kind: 'tree',
+    leafStyle: params.leafStyle,
+    leafArrangement: params.leafArrangement,
+    ...(contract ? { taxonId: contract.taxonId, scientificName: contract.scientificName,
+      speciesContractVersion: contract.version, confidence: contract.confidence } : {}),
+    defaults: {
+      height: params.height,
+      radius: params.radius,
+      recursion: params.recursion,
+      leafCount: params.leafCount,
+    },
+  }
+}
 
-export const createDefaultParams = (presetName = DEFAULT_PRESET_NAME) => clonePresetParams(presetName)
+export const createDefaultParams = (presetName = DEFAULT_PRESET_NAME) =>
+  createSpeciesDefaults(presetName, clonePresetParams(presetName))
 
 export const createSchemaDocument = () => ({
   version: 4,

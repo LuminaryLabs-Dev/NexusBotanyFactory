@@ -10,6 +10,7 @@ import { getImpostorFrameSelection } from '../../models/botany/impostors/imposto
 import { createTreeDataForLod } from '../../models/botany/export/buildExportScene.js'
 import { createBarkMaterial, createLeafMaterial, updateBarkMaterial, updateLeafMaterial } from '../../models/botany/rendering/materialRecipes.js'
 import { buildTerrainResources } from '../../models/botany/rendering/terrain.js'
+import { getNativeFoliageProfile } from '../../models/botany/rendering/nativeFoliageProfiles.js'
 
 const createSkyTexture = () => {
   const canvas = document.createElement('canvas')
@@ -175,6 +176,9 @@ export default function BotanyViewport({ specimen, generated, debugMode, preview
             impostorMeshRef.current.position.set(localAnchor.x, localAnchor.y, localAnchor.z)
           }
           impostorMeshRef.current.lookAt(camera.position)
+        }
+        if (leavesRef.current?.material?.userData?.nativeWindTime) {
+          leavesRef.current.material.userData.nativeWindTime.value = performance.now() * 0.001
         }
         renderer.render(scene, camera)
         animationRef.current = requestAnimationFrame(animate)
@@ -415,20 +419,22 @@ export default function BotanyViewport({ specimen, generated, debugMode, preview
 
         leavesRef.current = new THREE.InstancedMesh(
           leafGeometryRef.current,
-          createLeafMaterial(materialRecipe, { showLeafDensity }),
+          createLeafMaterial(materialRecipe, { showLeafDensity, speciesName: specimen.params.name, leafStyle: specimen.params.leafStyle, instanced: true }),
           generated.treeData.leafInstances.length,
         )
         leavesRef.current.castShadow = true
         treeGroupRef.current.add(leavesRef.current)
       }
 
-      updateLeafMaterial(leavesRef.current.material, materialRecipe, { showLeafDensity })
+      updateLeafMaterial(leavesRef.current.material, materialRecipe, { showLeafDensity, speciesName: specimen.params.name, leafStyle: specimen.params.leafStyle })
       const dummy = new THREE.Object3D()
       generated.treeData.leafInstances.forEach((leaf, index) => {
         dummy.position.copy(leaf.pos)
         dummy.lookAt(leaf.pos.clone().add(leaf.dir))
         dummy.rotateZ(leaf.roll)
-        dummy.scale.setScalar(specimen.params.leafStyle === 'needle' ? specimen.params.leafSize * 3.5 : specimen.params.leafSize)
+        const profile = getNativeFoliageProfile(specimen.params.name, specimen.params.leafStyle)
+        const leafSize = specimen.params.leafStyle === 'needle' ? specimen.params.leafSize * 3.5 : specimen.params.leafSize
+        dummy.scale.set(leafSize * profile.width, leafSize * profile.height, leafSize)
         dummy.updateMatrix()
         leavesRef.current.setMatrixAt(index, dummy.matrix)
       })
@@ -450,8 +456,9 @@ export default function BotanyViewport({ specimen, generated, debugMode, preview
 
       const group = new THREE.Group()
       const geometry = new THREE.PlaneGeometry(1, 1)
+      const cardMaterial = createLeafMaterial(materialRecipe, { showLeafDensity, speciesName: specimen.params.name, leafStyle: specimen.params.leafStyle })
       activeLod.leafCards.forEach((card) => {
-        const mesh = new THREE.Mesh(geometry.clone(), createLeafMaterial(materialRecipe, { showLeafDensity }))
+        const mesh = new THREE.Mesh(geometry, cardMaterial)
         mesh.position.set(card.position.x, card.position.y, card.position.z)
         mesh.lookAt(
           card.position.x + card.direction.x,

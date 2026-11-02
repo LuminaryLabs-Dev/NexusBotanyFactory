@@ -4,11 +4,11 @@ import { InspectorField, InspectorSectionCard } from './FieldControls.jsx'
 import { getIn } from '../../lib/objectPaths.js'
 import { getLevelInspectorFields } from '../../models/botany/ui/inspectorCatalog.js'
 
-export default function LevelControls({ params, activeCategories, toggleCategory, updatePath, getLevelSummary }) {
+export default function LevelControls({ params, activeCategories, toggleCategory, updatePath, getLevelSummary, nativeFields = new Map() }) {
   return Array.from({ length: params.recursion + 1 }).map((_, depth) => {
     const sectionId = `lvl-${depth}`
     const expanded = activeCategories.includes(sectionId)
-    const fields = getLevelInspectorFields(depth)
+    const fields = getLevelInspectorFields(depth).map(field => nativeFields.has(field.path) ? {...field,...nativeFields.get(field.path),visibleIn:field.visibleIn} : field)
     const title = depth === 0 ? 'Primary Branches' : `Branch Layer ${depth + 1}`
     const summary = expanded ? `Editing layer ${depth + 1}.` : getLevelSummary(depth)
 

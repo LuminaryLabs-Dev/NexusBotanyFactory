@@ -6,6 +6,7 @@ import { customSpecimenStore } from '../models/botany/custom-specimens/store.js'
 import { downloadGeneratedAsFbx } from '../models/botany/export/browserFbxDownload.js'
 import { setIn } from '../lib/objectPaths.js'
 import { usePineSimulationViewModel } from './pineSimulationViewModel.js'
+import { getSpeciesContract, getNativePresetCatalog, applyNativeEdit, randomizeNativeParams, validateNativeParams, normalizeLegacyToNative } from '../models/botany/schema/speciesContracts.js'
 
 const createInitialSpecimen = () => ({
   id: null,
@@ -16,7 +17,7 @@ const createInitialSpecimen = () => ({
   customSpecimenVersion: null,
   customSpecimenSnapshot: null,
   tags: [],
-  params: clonePresetParams('Pine'),
+  params: createInitialParams({presetName:'Pine',kind:'tree'}),
 })
 
 const createBlankCustomDefinition = () => ({
@@ -147,24 +148,30 @@ export const useEditorViewModel = () => {
     [customDefinitions, specimen.customSpecimenId],
   )
 
+  const nativeValidation = useMemo(() => validateNativeParams(specimen.params), [specimen.params])
+
   const validation = useMemo(
     () => validateParams(specimen.params, activeCustomDefinition?.controlSchema ?? []),
     [specimen.params, activeCustomDefinition],
   )
 
   const viewportState = usePineSimulationViewModel(specimen, specimenRevision)
-  const pinePresets = useMemo(
-    () => {
-      const matches = presetCatalog.filter((preset) => preset.name === 'Pine' || preset.id === 'builtin:pine' || preset.id === 'Pine')
-      return matches.length > 0 ? matches : [DEFAULT_PINE_PRESET]
-    },
-    [presetCatalog],
-  )
+  const builtInPresets = useMemo(() => getNativePresetCatalog(presetCatalog), [presetCatalog])
 
   const updatePath = (path, value) => {
-    startTransition(() => {
-      setSpecimen((current) => setIn(current, path, value))
-    })
+    const key = path.replace(/^params\./, '')
+    const contract = specimen.kind === 'tree' ? getSpeciesContract(specimen.params?.name) : null
+    if (contract && path.startsWith('params.') && contract.fields[key]) {
+      const change = applyNativeEdit(specimen.params, key, value)
+      if (!change.accepted) {
+        setError(change.error)
+        return
+      }
+      setError(null)
+      startTransition(() => setSpecimen(current => ({...current,params:change.params})))
+      return
+    }
+    startTransition(() => setSpecimen(current => setIn(current,path,value)))
   }
 
   const updateParam = (key, value) => updatePath(`params.${key}`, value)
@@ -173,10 +180,10 @@ export const useEditorViewModel = () => {
 
   const applyPreset = (presetInput) => {
     const preset = typeof presetInput === 'string'
-      ? pinePresets.find((entry) => entry.id === presetInput || entry.name === presetInput) ?? null
+      ? builtInPresets.find((entry) => entry.id === presetInput || entry.name === presetInput) ?? null
       : presetInput
 
-    if (!preset || preset.name !== 'Pine') return
+    if (!preset || (!getSpeciesContract(preset.name) && preset.kind !== 'custom' && !preset.customSpecimenId)) return
 
     if (preset.kind === 'custom' || preset.customSpecimenId) {
       const definition = customDefinitions.find((entry) => entry.id === (preset.customSpecimenId ?? preset.id)) ?? null
@@ -233,6 +240,20 @@ export const useEditorViewModel = () => {
   }
 
   const randomizeSeed = () => updateParam('seed', Math.floor(Math.random() * 2147483647))
+  const randomizeTree = () => {
+    if (specimen.kind !== 'tree' || !getSpeciesContract(specimen.params?.name)) return
+    const nextSeed = Math.floor(Math.random() * 2147483647)
+    setSpecimen(current => ({...current,params:randomizeNativeParams(current.params,nextSeed)}))
+    setSpecimenRevision(current => current + 1)
+    setError(null)
+  }
+  const normalizeTree = () => {
+    if (specimen.kind !== 'tree' || !getSpeciesContract(specimen.params?.name)) return
+    const normalized = normalizeLegacyToNative(specimen.params)
+    setSpecimen(current => ({...current,params:normalized.params}))
+    setSpecimenRevision(current=>current+1)
+    setError(null)
+  }
   const requestFrame = () => setFrameRequestToken((current) => current + 1)
   const toggleCategory = (id) => setActiveCategories((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id])
 
@@ -476,7 +497,7 @@ export const useEditorViewModel = () => {
   }
 
   const load = async () => ({
-    presets: pinePresets.map((preset) => preset.name),
+    presets: builtInPresets.map((preset) => preset.name),
   })
 
   const exportFbx = async () => {
@@ -515,7 +536,10 @@ export const useEditorViewModel = () => {
     error,
     catalogStatus,
     catalogError,
-    presets: pinePresets,
+    presets: builtInPresets,
+    nativeValidation,
+    randomizeTree,
+    normalizeTree,
     customDefinitions,
     customDraft,
     selectedCustomSpecimenId,

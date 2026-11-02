@@ -8,6 +8,7 @@ import {
   SUPPORTED_ASSET_KINDS,
 } from '../schema/schema.js'
 import { clonePresetParams, SPECIES_PRESETS } from '../schema/presets.js'
+import { createSpeciesDefaults, getSpeciesContract } from '../schema/speciesContracts.js'
 
 const colorPattern = /^#[0-9a-fA-F]{6}$/
 
@@ -167,7 +168,10 @@ export const applyKindDefaults = (params, kind) => {
 }
 
 export const createInitialParams = ({ presetName, kind, paramsPatch }) => {
-  const base = clonePresetParams(normalizePresetName(presetName))
+  const resolvedName = normalizePresetName(presetName)
+  const base = normalizeAssetKind(kind) === 'tree'
+    ? createSpeciesDefaults(resolvedName, clonePresetParams(resolvedName))
+    : clonePresetParams(resolvedName)
   const withKind = applyKindDefaults(base, kind)
   return normalizeCameraParams(mergeParams(withKind, paramsPatch))
 }
@@ -268,7 +272,7 @@ export const validateParams = (params, extraFieldSchema = []) => {
     const value = normalizedParams[key]
 
     if (value === undefined) {
-      pushValidationError(errors, `params.${key}`, 'Missing required field.', value)
+      if (!schema.optional) pushValidationError(errors, `params.${key}`, 'Missing required field.', value)
       return
     }
 
@@ -295,12 +299,20 @@ export const validateParams = (params, extraFieldSchema = []) => {
     const value = normalizedParams[key]
     if (value === undefined) {
       if (schema.required) {
-        pushValidationError(errors, `params.${key}`, 'Missing required field.', value)
+        if (!schema.optional) pushValidationError(errors, `params.${key}`, 'Missing required field.', value)
       }
       return
     }
     validateField(key, schema, value)
   })
+
+  const contract = getSpeciesContract(normalizedParams.name)
+  if (contract && normalizedParams.speciesId && normalizedParams.speciesId !== contract.taxonId) {
+    pushValidationError(errors, 'params.speciesId', 'Species identity does not match its contract.', normalizedParams.speciesId)
+  }
+  if (contract && normalizedParams.speciesContractVersion && normalizedParams.speciesContractVersion !== contract.version) {
+    pushValidationError(errors, 'params.speciesContractVersion', 'Species contract version mismatch.', normalizedParams.speciesContractVersion)
+  }
 
   if (!LEAF_STYLE_ENUM.includes(normalizedParams.leafStyle)) {
     pushValidationError(errors, 'params.leafStyle', `Expected one of: ${LEAF_STYLE_ENUM.join(', ')}.`, normalizedParams.leafStyle)

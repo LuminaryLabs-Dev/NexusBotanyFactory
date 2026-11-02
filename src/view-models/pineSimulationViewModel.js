@@ -1,5 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { deserializeGeneratedPayload } from '../models/botany/serialization/generatedPayload.js'
+import { generateSpecimen } from '../models/botany/services/specimenGenerationService.js'
 import { buildGeneratedFromGrowthState } from '../models/botany/simulation/buildGeneratedFromGrowthState.js'
 import { advancePineGrowthTick, initializePineGrowth, seekPineGrowth } from '../models/botany/simulation/pineGrowth.js'
 
@@ -62,6 +63,10 @@ export const usePineSimulationViewModel = (specimen, revision) => {
   }
 
   useEffect(() => {
+    if (specimen.params.name !== 'Pine') {
+      queueMicrotask(() => setExecutionState('main-thread'))
+      return undefined
+    }
     if (executionState !== 'initializing') {
       return undefined
     }
@@ -118,13 +123,13 @@ export const usePineSimulationViewModel = (specimen, revision) => {
       })
       return undefined
     }
-  }, [executionState, specimen.params.simulationYears, specimen.params.ticksPerYear])
+  }, [executionState, specimen.params.name, specimen.params.simulationYears, specimen.params.ticksPerYear])
 
   useEffect(() => {
     if (!deferredInput) return undefined
     let cancelled = false
 
-    if (executionState === 'worker' && workerRef.current) {
+    if (deferredInput.params.name === 'Pine' && executionState === 'worker' && workerRef.current) {
       queueMicrotask(() => {
         if (cancelled) return
         setState((current) => ({
@@ -147,6 +152,21 @@ export const usePineSimulationViewModel = (specimen, revision) => {
       }
     }
 
+    if (deferredInput.params?.name !== 'Pine') {
+      try {
+        const generated = generateSpecimen(deferredInput)
+        queueMicrotask(() => {
+          if (cancelled) return
+          setState(current => ({...current,generated:generated.validation?.valid ? generated : null,
+            pending:false,error:generated.validation?.valid ? null : generated.validation?.errors?.[0]?.message ?? 'Generation failed',
+            revision:deferredInput.revision ?? current.revision,
+            playback:{...current.playback,playing:false,completed:true,totalTicks:0,absoluteTick:0}}))
+        })
+      } catch(error) {
+        queueMicrotask(() => {if(!cancelled)setState(current=>({...current,pending:false,error:error.message,generated:null}))})
+      }
+      return () => {cancelled=true}
+    }
     const config = { params: deferredInput.params }
     const growthState = initializePineGrowth(config)
     mainThreadStateRef.current = growthState
@@ -172,6 +192,7 @@ export const usePineSimulationViewModel = (specimen, revision) => {
   }, [deferredInput, executionState])
 
   useEffect(() => {
+    if (deferredInput.params?.name !== 'Pine') return undefined
     if (!state.playback.playing || state.pending || state.playback.completed) return undefined
 
     const intervalMs = Math.max(24, Math.round(1000 / Math.max(state.playback.speed, 1)))

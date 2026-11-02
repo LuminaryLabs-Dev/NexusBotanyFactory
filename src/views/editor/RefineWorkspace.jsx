@@ -4,6 +4,7 @@ import LevelControls from './LevelControls.jsx'
 import { InspectorFieldList, InspectorSectionCard } from './FieldControls.jsx'
 import { getIn } from '../../lib/objectPaths.js'
 import { getRefineWorkspaceSections, getWorkspaceSpec } from '../../models/botany/ui/workspaceSpecs.js'
+import { getNativeInspectorSpecs } from '../../models/botany/schema/speciesContracts.js'
 
 export default function RefineWorkspace({
   specimen,
@@ -13,6 +14,7 @@ export default function RefineWorkspace({
   getLevelSummary,
   customDefinition,
 }) {
+  const nativeFields = new Map((specimen.kind === 'tree' ? getNativeInspectorSpecs(specimen.params?.name) : []).map(field => [field.path,field]))
   const workspace = getWorkspaceSpec('refine')
   const sections = getRefineWorkspaceSections(customDefinition)
   const branchLayerSection = sections.find((section) => section.id === 'branchLayers')
@@ -40,7 +42,7 @@ export default function RefineWorkspace({
           >
             <div className="space-y-3">
               <InspectorFieldList
-                fields={section.fields}
+                fields={section.fields.map(field => nativeFields.has(field.path) ? {...field,...nativeFields.get(field.path),visibleIn:field.visibleIn} : field)}
                 activeTab="refine"
                 valueGetter={(path) => getIn(specimen, path)}
                 onChange={updatePath}
@@ -61,6 +63,7 @@ export default function RefineWorkspace({
             toggleCategory={toggleCategory}
             updatePath={updatePath}
             getLevelSummary={getLevelSummary}
+            nativeFields={nativeFields}
           />
         </div>
       </InspectorSectionCard>

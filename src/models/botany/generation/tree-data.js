@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { mulberry32 } from './noise.js'
+import { getOakNativeCrownRadius, getOakCrownSteering } from './nativeCrownEnvelope.js'
 
 const UP = new THREE.Vector3(0, 1, 0)
 const EPSILON = 0.0001
@@ -303,7 +304,24 @@ export const generateTreeData = (params, options = {}) => {
         currentDir.copy(awareness.direction)
       }
       const stepLength = stepLengthBase * awareness.stepScale
+      // Mature oaks use a soft, height-aware crown envelope. Start steering
+      // before the outer limit so branches curve naturally rather than
+      // producing a stack of abruptly clipped endpoints.
+      if (params.name === 'Oak' && depth > 0) {
+        const radialDistance = Math.hypot(currentPos.x, currentPos.z)
+        const inwardWeight = getOakCrownSteering(params.height, currentPos.y, radialDistance)
+        if (inwardWeight > 0.001 && radialDistance > EPSILON) {
+          const inward = new THREE.Vector3(-currentPos.x / radialDistance, 0.12, -currentPos.z / radialDistance).normalize()
+          currentDir.lerp(inward, inwardWeight).normalize()
+        }
+      }
       let nextPos = currentPos.clone().add(currentDir.clone().multiplyScalar(stepLength))
+      if (params.name === 'Oak' && depth > 0) {
+        const outerRadius = getOakNativeCrownRadius(params.height, nextPos.y)
+        nextPos = clampPlanarOffset(nextPos, new THREE.Vector3(0, nextPos.y, 0), outerRadius)
+        const actualStep = nextPos.clone().sub(currentPos)
+        if (actualStep.lengthSq() > EPSILON) currentDir.copy(actualStep.normalize())
+      }
       if (isBaseTrunk) {
         const heightGain = Math.max(nextPos.y - axisOrigin.y, stepLength * 0.65)
         const maxPlanarOffset = (heightGain * trunkLeanLimit) + (radius * 0.15)
@@ -470,7 +488,10 @@ export const generateTreeData = (params, options = {}) => {
         const energyRatio = broadleafMode
           ? THREE.MathUtils.lerp(0.3 + (0.7 * ageFactor), 0.4, level.apicalControl ?? 0.5)
           : THREE.MathUtils.lerp(0.5 + (0.5 * ageFactor), 0.4, level.apicalControl ?? 0.5)
-        const childLength = (depth === 0 ? params.height * level.lengthScale : length * level.lengthScale) * energyRatio * (0.8 + (random() * 0.4))
+        const baseChildLength = (depth === 0 ? params.height * level.lengthScale : length * level.lengthScale) * energyRatio * (0.8 + (random() * 0.4))
+        const childLength = params.name === 'Oak' && depth === 0
+          ? Math.min(baseChildLength, params.height * 0.48)
+          : baseChildLength
         const childRadius = spawnPoint.radius * level.radiusScale * (0.8 + (random() * 0.3))
         if (childLength <= 0.1 || childRadius <= 0.005) continue
 
